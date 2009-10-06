@@ -7,6 +7,15 @@ module Polyglot
   
   class PolyglotLoadError < LoadError; end
 
+  class NestedLoadError < LoadError
+    def initialize le
+      @le = le
+    end
+    def reraise
+      raise @le
+    end
+  end
+
   def self.register(extension, klass)
     extension = [extension] unless Enumerable === extension
     extension.each{|e|
@@ -20,7 +29,7 @@ module Polyglot
     (is_absolute ? [""] : $:).each{|lib|
       base = is_absolute ? "" : lib+File::SEPARATOR
       # In Windows, repeated SEPARATOR chars have a special meaning, avoid adding them
-      matches = Dir[base+file+".{"+extensions+"}"]
+      matches = Dir[(base+file+".{"+extensions+"}").to_s]
       # Revisit: Should we do more do if more than one candidate found?
       $stderr.puts "Polyglot: found more than one candidate for #{file}: #{matches*", "}" if matches.size > 1
       if path = matches[0]
@@ -36,8 +45,12 @@ module Polyglot
     begin
       source_file, loader = Polyglot.find(file, *a[1..-1], &b)
       if (loader)
-        loader.load(source_file)
-        @loaded[file] = true
+        begin
+          loader.load(source_file)
+          @loaded[file] = true
+        rescue LoadError => e
+          raise Polyglot::NestedLoadError.new(e)
+        end
       else
         msg = "Failed to load #{file} using extensions #{(@registrations.keys+["rb"]).sort*", "}"
         if defined?(MissingSourceFile)
@@ -58,7 +71,9 @@ module Kernel
   rescue LoadError => load_error
     begin
       Polyglot.load(*a, &b)
-    rescue Polyglot::PolyglotLoadError
+    rescue Polyglot::NestedLoadError => e
+      e.reraise
+    rescue LoadError
       # Raise the original exception, possibly a MissingSourceFile with a path
       raise load_error
     end
