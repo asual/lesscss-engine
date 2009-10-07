@@ -45,7 +45,7 @@ public class LessEngineTest {
     public void compile() throws LessException, IOException {
         assertEquals("body { color: #f0f0f0; }", 
                 engine.compile(getClass().getClassLoader().getResource("META-INF/test.css")));
-    }	
+    }
 
     @After
     public void after() {
