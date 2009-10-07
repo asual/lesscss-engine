@@ -7,7 +7,7 @@
     <groupId>com.asual.lesscss</groupId>
     <artifactId>lesscss-engine</artifactId>
     <packaging>jar</packaging>
-    <name>LESS for Java</name>
+    <name>LESS Engine</name>
     <scm>
         <url>scm:git:git://github.com/asual/lesscss-engine.git</url>
     </scm>
