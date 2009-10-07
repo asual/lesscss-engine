@@ -132,7 +132,7 @@ public class LessEngine {
 		
 		if (source != null) {
 
-			String path = source.getFile();			
+            String path = source.getFile();
 			String folder = path.substring(0, path.lastIndexOf(System.getProperty("file.separator")) + 1);
 
 			Long lastModified = source.openConnection().getLastModified();
@@ -145,7 +145,14 @@ public class LessEngine {
 				Matcher m = p.matcher(content);
 				
 				while (m.find()) {
-					compile(new URL(folder + m.group(1).replaceAll("\"|'", "")), cache.getImports(path));
+                    String urlPath = folder + m.group(1).replaceAll("\"|'", "");
+                    URL url = null;
+                    try {
+                        url = new URL(urlPath);
+                    } catch (Exception e) {
+                        url = new URL("file:" + urlPath);                       
+                    }
+                    compile(url, cache.getImports(path));
 				}
 				
 				if (cache == this.cache) {
