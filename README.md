@@ -1,7 +1,7 @@
-LESS for Java
-=============
+LESS Engine
+===========
 
-LESS for Java is a Maven 2 artifact that wraps the original LESS sources 
+LESS Engine is a Maven 2 artifact that wraps the original LESS sources 
 and makes them available to Java developers thanks to JRuby. The project 
 provides a straightforward access to the core LESS functionality.
 
