@@ -73,12 +73,12 @@ module Less
       #
       # Accessors for the different nodes in @rules
       #
-      def identifiers; @rules.select {|r| r.kind_of?     Property } end
-      def properties;  @rules.select {|r| r.instance_of? Property } end
-      def variables;   @rules.select {|r| r.instance_of? Variable } end
-      def elements;    @rules.select {|r| r.kind_of?     Element  } end
-      def mixins;      @rules.select {|r| r.instance_of? Mixin    } end
-      def parameters;  []                                           end
+      def identifiers; @rules.select {|r| r.kind_of?     Property   } end
+      def properties;  @rules.select {|r| r.instance_of? Property   } end
+      def variables;   @rules.select {|r| r.instance_of? Variable   } end
+      def elements;    @rules.select {|r| r.kind_of?     Element    } end
+      def mixins;      @rules.select {|r| r.instance_of? Mixin::Call} end
+      def parameters;  []                                             end
 
       # Select a child element
       # TODO: Implement full selector syntax & merge with descend()
@@ -145,23 +145,29 @@ module Less
       #
       # Entry point for the css conversion
       #
-      def to_css path = []
+      def to_css path = [], env = nil
         path << @selector.to_css << name unless root?
 
-        content = properties.map do |i|
-          ' ' * 2 + i.to_css
+#        puts "to_css env: #{env ? env.variables : "nil"}"
+
+        content = (properties + mixins).map do |i|
+          ' ' * 2 + i.to_css(env)
         end.compact.reject(&:empty?) * "\n"
 
-        content = content.include?("\n") ?
-          "\n#{content}\n" : " #{content.strip} "
-        ruleset = !content.strip.empty??
-          "#{[path.reject(&:empty?).join.strip,
-          *@set.map(&:name)].uniq * ', '} {#{content}}\n" : ""
+        content = content.include?("\n") ? "\n#{content}\n" : " #{content.strip} "
+        ruleset = if is_a?(Mixin::Def)
+          content.strip
+        else
+          !content.strip.empty??
+            "#{[path.reject(&:empty?).join.strip,
+            *@set.map(&:name)].uniq * ', '} {#{content}}\n" : ""
+        end
 
-        css = ruleset + elements.map do |i|
-          i.to_css(path)
+        css = ruleset + elements.
+              reject {|e| e.is_a? Mixin::Def }.map do |i|
+          i.to_css(path, env)
         end.reject(&:empty?).join
-        path.pop; path.pop
+        2.times {path.pop}
         css
       end
 
@@ -173,7 +179,7 @@ module Less
         path.map do |node|
           node.send(ary).find {|i| i.to_s == ident }
         end.compact.first.tap do |result|
-          raise VariableNameError, ident unless result
+          raise VariableNameError, ("#{ident} in #{self.to_s}") unless result
         end
       end
 
@@ -198,41 +204,72 @@ module Less
           indent[ depth ] + self.to_s,
           put[ variables ],
           put[ properties ],
+          put[ mixins ],
           elements.map {|i| i.inspect( depth + 1 ) } * "\n"
         ].reject(&:empty?).join("\n") + "\n" + indent[ depth ]
       end
     end
-    
-    class Mixin < Element
-      attr_accessor :params
-      
-      def initialize name, params = []
-        super name
-        @params = params.each do |param|
-          param.parent = self
+
+    module Mixin
+      class Call
+        include Entity
+
+        def initialize mixin, params, parent
+#          puts "Initializing a Mixin::Call #{mixin}"
+          @mixin = mixin
+          self.parent = parent
+          @params = params.each do |e|
+            e.parent = self.parent
+          end
+        end
+
+        def to_css env = nil
+#          puts "\n\n"
+#          puts "call .#{@mixin.name} #{@params} <#{@params.class}>"
+          @mixin.call(@params.map {|e| e.evaluate(env) })
+        end
+
+        def inspect
+          "#{@mixin.to_s} (#{@params})"
         end
       end
-      
-      def variables
-        @params + super
-      end
-      
-      def pass args, parent
-        params.zip(args).map do |a, b|
-          b ? Node::Variable.new(a.to_s, Expression.new([b])) : a
-        end + identifiers + elements
-      end
-      
-      def parameters
-        @params
-      end
-      
-      def to_s
-        '.' + name
-      end
-      
-      def to_css *args
-        ""
+
+      class Def < Element
+        attr_accessor :params
+
+        def initialize name, params = []
+          super name
+          @params = params.each do |param|
+            param.parent = self
+          end
+        end
+
+        def call args = []
+          env = Element.new
+
+          @params.zip(args).each do |param, val|
+            env << (val ? Variable.new(param.to_s, Expression.new([val])) : param)
+          end
+
+          #b ? Node::Variable.new(a.to_s, Expression.new([b])) : a
+
+#          puts "#{self.inspect}"
+#          puts "env: #{env.variables}      root?: #{env.root?}"
+#          puts "\nTOCSS"
+          to_css([], env)
+        end
+
+        def variables
+          params + super
+        end
+
+        def to_s
+          '.' + name
+        end
+
+        def to_css path, env
+          super(path, env)
+        end
       end
     end
   end

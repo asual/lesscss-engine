@@ -54,7 +54,7 @@ module Less
     
       def initialize name, args
         @args = if args.is_a? Array
-          Value.new(args, self)
+          args.map {|e| e.is_a?(Expression) ? e : Expression.new(e, self)}
         else
           [args]
         end
@@ -62,8 +62,8 @@ module Less
         super name
       end
       
-      def to_css
-        self.evaluate.to_css
+      def to_css env = nil
+        self.evaluate(env).to_css
       end
       
       #

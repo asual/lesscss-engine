@@ -8,6 +8,7 @@ $:.unshift File.dirname(__FILE__) + '/mutter'
 
 require 'mutterer'
 require 'indenter'
+require 'table'
 require 'ext'
 
 module Mutter
@@ -48,6 +49,10 @@ module Mutter
   
   def self.stylize *args
     new.stylize *args
+  end
+  
+  def self.process *args
+    new.process *args
   end
   
   def self.new *args

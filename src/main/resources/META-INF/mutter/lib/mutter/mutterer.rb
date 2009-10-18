@@ -9,7 +9,7 @@ module Mutter
     #
     def initialize obj = {}
       self.reset
-      @defaults = load File.dirname(__FILE__) + "/styles"
+      @defaults = load 'default'
 
       case obj
         when Hash       # A style definition: expand quick-styles and merge with @styles
@@ -44,12 +44,13 @@ module Mutter
 
     def clear opt = :all
       case opt
-        when :user    then @styles = {}
-        when :default then @defaults = {}
-        when :styles  then @styles, @defaults = {}, {}
-        when :active  then @active = []
-        when :all     then @active, @styles, @defaults = [], {}, {}
-        else          raise ArgumentError, "[:user, :default, :active, :all] only"
+        when :user     then @styles = {}
+        when :styles   then @styles, @defaults = {}, {}
+        when :active   then @active = []
+        when :all      then @active, @styles, @defaults = [], {}, {}
+        when :default, 
+             :defaults then @defaults = {}
+        else           raise ArgumentError, "[:user, :default, :active, :all] only"
       end
       self
     end
@@ -60,7 +61,8 @@ module Mutter
     #   and converts the keys to symbols
     #
     def load styles
-      styles += '.yml' unless styles =~ /\.ya?ml/
+      styles += '.yml' unless styles =~ /\.ya?ml$/
+      styles = File.join(File.dirname(__FILE__), "styles", styles) unless File.exist? styles
       YAML.load_file(styles).inject({}) do |h, (key, value)|
         value = { :match => value['match'], :style => value['style'] }
         h.merge key.to_sym => value
@@ -71,7 +73,7 @@ module Mutter
     # Output to @stream
     #
     def say msg, *styles
-      self.write (ENV['TERM'].include?('color') ? process(msg, *styles) : msg) + "\n"
+      self.write((ENV['TERM'].include?('color') ? process(msg, *styles) : msg) + "\n")
       return nil
     end
     
@@ -107,6 +109,13 @@ module Mutter
       end
     end
     alias :oo watch
+    
+    #
+    # Create a table
+    #
+    def table *args, &blk
+      Table.new(*args, &blk)
+    end
 
     #
     # Add and remove styles from the active styles
@@ -138,10 +147,10 @@ module Mutter
       self.styles.inject(string) do |str, (name, options)|
         glyph, style = options[:match], options[:style]
         if glyph.is_a? Array
-          str.gsub(/#{Regexp.escape(glyph.first)}(.+?)
+          str.gsub(/#{Regexp.escape(glyph.first)}(.*?)
                     #{Regexp.escape(glyph.last)}/x) { stylize $1, style }
         else
-          str.gsub(/(#{Regexp.escape(glyph)}+)(.+?)\1/) { stylize $2, style }
+          str.gsub(/(#{Regexp.escape(glyph)}+)(.*?)\1/) { stylize $2, style }
         end
       end
     end
