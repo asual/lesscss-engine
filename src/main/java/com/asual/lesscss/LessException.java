@@ -23,19 +23,20 @@ public class LessException extends Exception {
 
     private static final long serialVersionUID = 662552833197468936L;
 
-	public LessException() {
-    	super();
+    public LessException() {
+        super();
     }
-	
-	public LessException(String message) {
-    	super(message);
+    
+    public LessException(String message) {
+        super(message);
     }
-	
-	public LessException(String message, Throwable e) {
-		super(message, e);
-	}
+    
+    public LessException(String message, Throwable e) {
+        super(message, e);
+    }
 
-	public LessException(Throwable e) {
-		super(e);
-	}
+    public LessException(Throwable e) {
+        super(e);
+    }
+    
 }

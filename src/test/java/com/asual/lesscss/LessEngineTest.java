@@ -18,10 +18,15 @@ package com.asual.lesscss;
 
 import static org.junit.Assert.assertEquals;
 
+import java.io.BufferedReader;
+import java.io.DataInputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 
-import org.junit.After;
-import org.junit.Before;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
@@ -29,26 +34,47 @@ import org.junit.Test;
  */
 public class LessEngineTest {
     
-    private LessEngine engine;
+    private static LessEngine engine;
     
-    @Before
-    public void before() {
+    @BeforeClass
+    public static void before() {
         engine = new LessEngine();
     }
     
-	@Test
-	public void parse() throws LessException {
-		assertEquals("div { width: 2; }", engine.parse("div { width: 1 + 1 }"));
-	}
-	
     @Test
-    public void compile() throws LessException, IOException {
+    public void parse() throws LessException {
+        assertEquals("div { width: 2; }", engine.compile("div { width: 1 + 1 }"));
+    }
+    
+    @Test
+    public void compileToString() throws LessException, IOException {
         assertEquals("body { color: #f0f0f0; }", 
                 engine.compile(getClass().getClassLoader().getResource("META-INF/test.css")));
     }
-
-    @After
-    public void after() {
+    
+    @Test
+    public void compileToFile() throws LessException, IOException {
+        File tempDir = new File(System.getProperty("java.io.tmpdir"));
+        File tempFile = File.createTempFile("less.css", null, tempDir);
+        engine.compile(
+        		new File(getClass().getClassLoader().getResource("META-INF/test.css").getPath()), 
+        		new File(tempFile.getAbsolutePath()));
+        FileInputStream fstream = new FileInputStream(tempFile.getAbsolutePath());
+        DataInputStream in = new DataInputStream(fstream);
+        BufferedReader br = new BufferedReader(new InputStreamReader(in));
+        String strLine;
+        StringBuilder sb = new StringBuilder();
+        while ((strLine = br.readLine()) != null) {
+            sb.append(strLine);
+        }
+        in.close();
+        assertEquals("body { color: #f0f0f0; }", sb.toString());
+        tempFile.delete();
+    }
+    
+    @AfterClass
+    public static void after() {
         engine.destroy();
     }
+    
 }
