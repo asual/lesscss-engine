@@ -66,6 +66,19 @@ public class LessEngine {
         }
     }
     
+    public String compile(URL input) throws LessException, IOException {
+        if (input != null) {
+            long time = System.currentTimeMillis();
+            String result = ((RubyString) adapter.eval(runtime, 
+                    "require 'less' \nLess::Engine.new(File.new('" + input.getFile() + "')).to_css")).toString().trim();
+            logger.info("The compilation of '" + input + "' took " + (System.currentTimeMillis () - time) + " ms.");
+            return result;
+        } else {
+            logger.error("The requested resource doesn't exist.");
+            throw new IOException("The requested resource doesn't exist.");
+        }
+    }
+    
     public String compile(File input) throws LessException, IOException {
         if (input.exists()) {
             long time = System.currentTimeMillis();
@@ -75,7 +88,7 @@ public class LessEngine {
             return result;
         } else {
             logger.error("The requested resource doesn't exist.");
-            throw new IOException("The requested file doesn't exist.");
+            throw new IOException("The requested resource doesn't exist.");
         }
     }
     
@@ -87,14 +100,6 @@ public class LessEngine {
         BufferedWriter bw = new BufferedWriter(new FileWriter(output));
         bw.write(content);
         bw.close();
-    }
-    
-    public String compile(URL input) throws LessException, IOException {
-        return compile(new File(input.getFile()));
-    }
-    
-    public void compile(URL input, URL output) throws LessException, IOException {
-        compile(new File(input.getFile()), new File(output.getFile()));
     }
     
     public void destroy() {
