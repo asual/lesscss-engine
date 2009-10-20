@@ -1,9 +1,8 @@
 LESS Engine
 ===========
 
-LESS Engine is a Maven 2 artifact that wraps the original LESS sources 
-and makes them available to Java developers thanks to JRuby. The project 
-provides a straightforward access to the core LESS functionality.
+LESS Engine provides basic access to the core LESS functionality. It's a core library that 
+can be used for a variety of JVM based LESS applications.
 
 Usage
 -----
