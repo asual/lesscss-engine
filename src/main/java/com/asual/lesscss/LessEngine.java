@@ -50,6 +50,7 @@ public class LessEngine {
         loadPaths.add("META-INF/treetop/lib");
         runtime = JavaEmbedUtils.initialize(loadPaths);
         adapter = JavaEmbedUtils.newRuntimeAdapter();
+        logger.info("Initializing LESS Engine");
         adapter.eval(runtime, "require 'less'");
     }
     
