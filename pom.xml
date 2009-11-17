@@ -25,7 +25,7 @@
         <dependency>
             <groupId>org.jruby</groupId>
             <artifactId>jruby-complete</artifactId>
-            <version>1.4.0RC1</version>
+            <version>1.4.0</version>
         </dependency>
         <dependency>
             <groupId>commons-logging</groupId>
