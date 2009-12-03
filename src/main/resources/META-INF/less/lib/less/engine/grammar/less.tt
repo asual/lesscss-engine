@@ -1,10 +1,13 @@
+require 'grammar/common'
+require 'grammar/entity'
+
 module Less
   grammar StyleSheet
     include Common
     include Entity
-    
+
     rule primary
-      (import / declaration / mixin / ruleset / comment)* {
+      (import / declaration / ruleset / mixin / comment)* {
         def build env = Less::Element.new
           elements.map do |e|
             e.build env if e.respond_to? :build
@@ -30,43 +33,41 @@ module Less
           end
         end
         # Mixin Declaration
-      } / '.' name:[-a-zA-Z0-9_]+ ws parameters ws "{" ws primary ws "}" ws {
+      } / ws '.' name:[-a-zA-Z0-9_]+ ws parameters ws "{" ws primary ws "}" ws {
         def build env
           env << Node::Mixin::Def.new(name.text_value, parameters.build(env))
           primary.build env.last
-          #env.last
         end
       }
     end
-    
+
     rule mixin
       name:('.' [-a-zA-Z0-9_]+) args:(arguments) s ';' ws {
         def build env
-          definition = env.nearest(name.text_value, :mixin) or raise MixinNameError, name.text_value                        
+          definition = env.nearest(name.text_value, :mixin) or raise MixinNameError, "#{name.text_value}() in #{env}"
           params = args.build.map {|i| Node::Expression.new i } unless args.empty?
           env << Node::Mixin::Call.new(definition, params || [], env)
         end
     } / ws selectors ';' ws {
-        def build env        
+        def build env
           selectors.build(env, :mixin).each do |path|
             rules = path.inject(env.root) do |current, node|
-              current.descend(node.selector, node) or raise MixinNameError, selectors.text_value
+              current.descend(node.selector, node) or raise MixinNameError, "#{selectors.text_value} in #{env}"
             end.rules
             env.rules += rules
-            #env.mix(rules)
           end
         end
-      } 
+      }
     end
-    
+
     rule selectors
       ws selector tail:(s ',' ws selector)* ws {
-        def build env, method 
+        def build env, method
           all.map do |e|
             e.send(method, env) if e.respond_to? method
           end.compact
         end
-    
+
         def all
           [selector] + tail.elements.map {|e| e.selector }
         end
@@ -84,7 +85,7 @@ module Less
             node.last
           end
         end
-    
+
         def mixin env
           sel.elements.map do |e|
             Node::Element.new(e.element.text_value, e.select.text_value)
@@ -92,7 +93,7 @@ module Less
         end
       }
     end
-    
+
     rule parameters
       '(' s ')' {
         def build env
@@ -104,7 +105,7 @@ module Less
             e.build(env)
           end
         end
-        
+
         def all
           [parameter] + tail.elements.map {|e| e.parameter }
         end
@@ -118,7 +119,7 @@ module Less
         end
       }
     end
-    
+
     rule import
       ws "@import" S url:(string / url) medias? s ';' ws {
         def build env
@@ -141,7 +142,7 @@ module Less
         def build env = nil
           Node::Function.new('url', value)
         end
-    
+
         def value
           Node::Quoted.new CGI.unescape(path.text_value)
         end
@@ -157,10 +158,10 @@ module Less
     # height: 100%;
     #
     rule declaration
-      ws name:(ident / variable) s ':' s expressions tail:(ws ',' ws expressions)* s (';'/ ws &'}') ws {
+      ws name:(ident / variable) s ':' ws expressions tail:(ws ',' ws expressions)* s (';'/ ws &'}') ws {
         def build env
           result = all.map {|e| e.build(env) if e.respond_to? :build }.compact
-          env << (name.text_value =~ /^@/ ? 
+          env << (name.text_value =~ /^@/ ?
             Node::Variable : Node::Property).new(name.text_value, result, env)
         end
 
@@ -177,7 +178,7 @@ module Less
     rule expressions
       # Operation
       expression tail:(operator expression)+ {
-        def build env = nil          
+        def build env = nil
           all.map {|e| e.build(env) }.dissolve
         end
 
@@ -189,12 +190,12 @@ module Less
         def build env = nil
           all.map {|e| e.build(env) if e.respond_to? :build }.compact
         end
-        
+
         def all
           [expression] + tail.elements.map {|f| f.expression } + [i]
         end
       # Catch-all rule
-      } / [-a-zA-Z0-9_%*/.&=:,#+? \[\]()]+ {
+      } / [-a-zA-Z0-9_.&*/=:,+? \[\]()#%]+ {
         def build env
           [Node::Anonymous.new(text_value)]
         end
@@ -213,7 +214,7 @@ module Less
         end
       }
     end
-    
+
     # !important
     rule important
       s '!' s 'important' {
@@ -242,7 +243,15 @@ module Less
     # div / .class / #id / input[type="text"] / lang(fr)
     #
     rule element
-      ((class / id / tag / ident) attribute* ('(' (selector / number) ')')?)+ / attribute+ / '@media' / '@font-face'
+      ((class / id / tag / ident) attribute* ('(' ([a-zA-Z]+ / pseudo_exp / selector / [0-9]+) ')')?)+
+      / attribute+ / '@media' / '@font-face'
+    end
+
+    #
+    # 4n+1
+    #
+    rule pseudo_exp
+      '-'? ([0-9]+)? 'n' ([-+] [0-9]+)?
     end
 
     #
@@ -288,7 +297,7 @@ module Less
         end
       }
     end
-    
+
     #
     # Functions and arguments
     #
@@ -307,7 +316,7 @@ module Less
             e.build if e.respond_to? :build
           end.compact
         end
-  
+
         def all
           [expressions] + tail.elements.map {|e| e.expressions }
         end

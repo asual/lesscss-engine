@@ -13,7 +13,7 @@ module Less
       include Entity
 
       attr_accessor :rules, :selector, :file,
-                    :set,   :imported, :name     
+                    :set,   :imported, :name
 
       def initialize name = "", selector = ''
         @name = name
@@ -48,9 +48,10 @@ module Less
       # but it'll have to do until I find
       # a proper way to do it.
       def group
-        matched = false
-        stack, result = elements.dup, []
+        elements = self.elements.reject {|e| e.is_a?(Mixin::Def) }
         return self unless elements.size > 1
+
+        stack, result, matched = elements.dup, [], false
 
         elements.each do
           e = stack.first
@@ -119,13 +120,7 @@ module Less
           self[element.name] if self[element.name].selector.class == selector.class
         end
       end
-      
-      def mix arr = []
-        @rules += arr.map do |r|
-          r.copy.tap {|i| i.parent = self }
-        end
-      end
-      
+
       #
       # Add an arbitrary node to this element
       #
@@ -148,13 +143,15 @@ module Less
       def to_css path = [], env = nil
         path << @selector.to_css << name unless root?
 
-#        puts "to_css env: #{env ? env.variables : "nil"}"
-
-        content = (properties + mixins).map do |i|
+#       puts "to_css env: #{env ? env.variables : "nil"}"
+        content = @rules.select do |r|
+          r.is_a?(Mixin::Call) || r.instance_of?(Property)
+        end.map do |i|
           ' ' * 2 + i.to_css(env)
         end.compact.reject(&:empty?) * "\n"
 
         content = content.include?("\n") ? "\n#{content}\n" : " #{content.strip} "
+
         ruleset = if is_a?(Mixin::Def)
           content.strip
         else
@@ -163,12 +160,12 @@ module Less
             *@set.map(&:name)].uniq * ', '} {#{content}}\n" : ""
         end
 
-        css = ruleset + elements.
-              reject {|e| e.is_a? Mixin::Def }.map do |i|
+        ruleset + elements.reject {|e| e.is_a?(Mixin::Def) }.map do |i|
           i.to_css(path, env)
         end.reject(&:empty?).join
-        2.times {path.pop}
-        css
+
+      ensure
+        2.times { path.pop }
       end
 
       #
@@ -179,7 +176,7 @@ module Less
         path.map do |node|
           node.send(ary).find {|i| i.to_s == ident }
         end.compact.first.tap do |result|
-          raise VariableNameError, ("#{ident} in #{self.to_s}") unless result
+          raise VariableNameError, ("#{ident} in #{self.to_s}") if result.nil? && type != :mixin
         end
       end
 
@@ -245,6 +242,10 @@ module Less
         end
 
         def call args = []
+          if e = @rules.find {|r| r.is_a? Element }
+            raise CompileError, "#{e} in #{self.inspect}: can't nest selectors inside a dynamic mixin."
+          end
+
           env = Element.new
 
           @params.zip(args).each do |param, val|
@@ -265,6 +266,10 @@ module Less
 
         def to_s
           '.' + name
+        end
+
+        def inspect
+          ".#{name}()"
         end
 
         def to_css path, env

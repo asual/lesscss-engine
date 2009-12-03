@@ -11,7 +11,7 @@
     <scm>
         <url>scm:git:git://github.com/asual/lesscss-engine.git</url>
     </scm>
-    <version>1.2.11</version>
+    <version>1.2.19</version>
     <description>A Java wrapper for LESS (http://lesscss.org). LESS extends CSS with: variables, mixins, operations and nested rules.</description>
     <url>http://www.asual.com/lesscss</url>
     <licenses>
