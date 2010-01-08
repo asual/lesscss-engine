@@ -1,6 +1,7 @@
 module Mutter
   class Mutterer
-    @stream = STDOUT
+    @stream = STDOUT  # output stream
+    @color = false    # force color
 
     # Initialize the styles, and load the defaults from +styles.yml+
     #
@@ -37,7 +38,7 @@ module Mutter
         end if style.is_a? Symbol
       end
     end
-    
+
     def styles
       @defaults.merge @styles
     end
@@ -48,7 +49,7 @@ module Mutter
         when :styles   then @styles, @defaults = {}, {}
         when :active   then @active = []
         when :all      then @active, @styles, @defaults = [], {}, {}
-        when :default, 
+        when :default,
              :defaults then @defaults = {}
         else           raise ArgumentError, "[:user, :default, :active, :all] only"
       end
@@ -69,16 +70,29 @@ module Mutter
       end
     end
 
+    def color?
+      (ENV['TERM'].include?('color') && self.class.stream.tty?) || self.class.color
+    end
+
     #
     # Output to @stream
     #
     def say msg, *styles
-      self.write((ENV['TERM'].include?('color') ? process(msg, *styles) : msg) + "\n")
-      return nil
+      self.write((color?? process(msg, *styles) : unstyle(msg)) + "\n") ; nil
     end
-    
     alias :print say
-    
+
+    #
+    # Remove all tags from string
+    #
+    def unstyle msg
+      styles.map do |_,v|
+        v[:match]
+      end.flatten.inject(msg) do |m, tag|
+        m.gsub(tag, '')
+      end
+    end
+
     #
     #  Parse the message, but also apply a style on the whole thing
     #
@@ -94,22 +108,9 @@ module Mutter
       self.class.stream.tap do |stream|
         stream.write str
         stream.flush
-      end; nil
+      end ; nil
     end
 
-    #
-    # Utility function, to make a block interruptible
-    #
-    def watch
-      begin
-        yield
-      rescue Interrupt
-        puts
-        exit 0
-      end
-    end
-    alias :oo watch
-    
     #
     # Create a table
     #
@@ -196,6 +197,14 @@ module Mutter
 
     def self.stream= io
       @stream = io
+    end
+
+    def self.color
+      @color
+    end
+
+    def self.color= bool
+      @color = bool
     end
   end
 end

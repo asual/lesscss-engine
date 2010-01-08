@@ -2,20 +2,20 @@
 # Mutter — the tiny command-line interface library with lots of style~
 #
 
-require 'yaml' 
+require 'yaml'
 
-$:.unshift File.dirname(__FILE__) + '/mutter'
+$:.unshift File.dirname(__FILE__)
 
-require 'mutterer'
-require 'indenter'
-require 'table'
-require 'ext'
+require 'mutter/mutterer'
+require 'mutter/indenter'
+require 'mutter/table'
+require 'mutter/ext'
 
 module Mutter
   #
   # ANSI color & transform codes
   #
-  #   If the value's an array, 
+  #   If the value's an array,
   #   [0] is the start code
   #   and [1] is the end code.
   #
@@ -38,24 +38,37 @@ module Mutter
       :reset  => 39
     }
   }
-  
+
   def self.indenter tab
     Indenter.new tab
   end
-  
+
   def self.say *args
     new.say *args
   end
-  
+
   def self.stylize *args
     new.stylize *args
   end
-  
+
   def self.process *args
     new.process *args
   end
-  
+
   def self.new *args
     Mutterer.new(*args)
   end
+
+  #
+  # Utility function, to make a block interruptible
+  #
+  def watch
+    begin
+      yield
+    rescue Interrupt
+      puts
+      exit 0
+    end
+  end
+  alias :oo watch
 end
