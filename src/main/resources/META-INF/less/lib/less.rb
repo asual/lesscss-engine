@@ -7,6 +7,8 @@ LESS_ROOT = File.expand_path(File.dirname(__FILE__))
 LESS_PARSER = File.join(LESS_ROOT, 'less', 'engine', 'parser.rb')
 LESS_GRAMMAR = File.join(LESS_ROOT, 'less', 'engine', 'grammar')
 
+$LESS_LOAD_PATH = []
+
 $:.unshift File.dirname(__FILE__)
 
 require 'less/ext'
