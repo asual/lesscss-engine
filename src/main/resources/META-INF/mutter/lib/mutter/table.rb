@@ -72,7 +72,7 @@ module Mutter
       if str.length > length
         str[0...(length - @options[:truncater].length)] + @options[:truncater]
       else
-        s = [Mutter.process(str, style), ' ' * (length - str.length)]
+        s = [Mutter.new.clear.process(str, style), ' ' * (length - str.length)]
         s.reverse! if align == :right
         s.join
       end
