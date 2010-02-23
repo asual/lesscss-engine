@@ -43,6 +43,7 @@ public class LessEngine {
     
     public LessEngine() {
         List<String> loadPaths = new ArrayList<String>();
+        loadPaths.add("META-INF/jruby.home/lib/ruby/1.8");
         loadPaths.add("META-INF/jruby.home/lib/ruby/site_ruby/1.8");
         loadPaths.add("META-INF/less/lib");
         loadPaths.add("META-INF/mutter/lib");
