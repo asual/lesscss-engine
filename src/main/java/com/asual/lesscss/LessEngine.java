@@ -20,16 +20,15 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.jruby.Ruby;
-import org.jruby.RubyRuntimeAdapter;
-import org.jruby.RubyString;
-import org.jruby.javasupport.JavaEmbedUtils;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.Function;
+import org.mozilla.javascript.Scriptable;
+import org.mozilla.javascript.tools.shell.Global;
 
 /**
  * @author Rostislav Hristov
@@ -37,74 +36,84 @@ import org.jruby.javasupport.JavaEmbedUtils;
 public class LessEngine {
 
     private final Log logger = LogFactory.getLog(getClass());
-    
-    private Ruby runtime;
-    private RubyRuntimeAdapter adapter;
+
+    private Scriptable scope;
+    private Function cs;
+    private Function cf;
     
     public LessEngine() {
-        List<String> loadPaths = new ArrayList<String>();
-        loadPaths.add("META-INF/jruby.home/lib/ruby/site_ruby/1.8");
-        loadPaths.add("META-INF/less/lib");
-        loadPaths.add("META-INF/mutter/lib");
-        loadPaths.add("META-INF/polyglot/lib");
-        loadPaths.add("META-INF/treetop/lib");
-        runtime = JavaEmbedUtils.initialize(loadPaths);
-        adapter = JavaEmbedUtils.newRuntimeAdapter();
-        logger.info("Initializing LESS Engine");
-        adapter.eval(runtime, "require 'less'");
+    	try {
+        	logger.info("Initializing LESS Engine");
+        	URL less = getClass().getClassLoader().getResource("META-INF/less.js");
+        	URL engine = getClass().getClassLoader().getResource("META-INF/engine.js");
+        	Context cx = Context.enter();
+        	cx.setOptimizationLevel(9);
+        	Global global = new Global();
+            global.init(cx);          
+            scope = cx.initStandardObjects(global);
+    		cx.evaluateReader(scope, new InputStreamReader(less.openConnection().getInputStream()), less.getFile(), 1, null);
+    		cx.evaluateReader(scope, new InputStreamReader(engine.openConnection().getInputStream()), engine.getFile(), 1, null);
+    		cs = (Function) scope.get("compileString", scope);
+    		cf = (Function) scope.get("compileFile", scope);
+    		Context.exit();
+		} catch (Exception e) {
+			logger.error("LESS Engine intialization failed", e);
+		}
     }
     
     public String compile(String input) throws LessException {
         try {
         	long time = System.currentTimeMillis();
-            String result = ((RubyString) adapter.eval(runtime, 
-                    "require 'less' \nLess::Engine.new('" + input + "').to_css")).toString().trim();
+            String result = call(cs, new Object[] {input});
             logger.info("The compilation of '" + input + "' took " + (System.currentTimeMillis () - time) + " ms.");
             return result;
-        } catch (Exception e) {
-            logger.error("Parsing error.");
+		} catch (Exception e) {
+			logger.error(e.getMessage());
             throw new LessException(e);
-        }
+		}
     }
     
-    public String compile(URL input) throws LessException, IOException {
-        if (input != null) {
+    public String compile(URL input) throws LessException {
+    	try {
             long time = System.currentTimeMillis();
-            String result = ((RubyString) adapter.eval(runtime, 
-                    "require 'less' \nLess::Engine.new(File.new('" + input.getFile() + "')).to_css")).toString().trim();
+            String result = call(cf, new Object[] {input.getProtocol() + ":" + input.getFile()});
             logger.info("The compilation of '" + input + "' took " + (System.currentTimeMillis () - time) + " ms.");
             return result;
-        } else {
-            logger.error("The requested resource doesn't exist.");
-            throw new IOException("The requested resource doesn't exist.");
-        }
+		} catch (Exception e) {
+			logger.error(e.getMessage());
+            throw new LessException(e);
+		}
     }
     
-    public String compile(File input) throws LessException, IOException {
-        if (input.exists()) {
+    public String compile(File input) throws LessException {
+    	try {
             long time = System.currentTimeMillis();
-            String result = ((RubyString) adapter.eval(runtime, 
-                    "require 'less' \nLess::Engine.new(File.new('" + input.getAbsolutePath() + "')).to_css")).toString().trim();
+            String result = call(cf, new Object[] {"file:" + input.getAbsolutePath()});
             logger.info("The compilation of '" + input + "' took " + (System.currentTimeMillis () - time) + " ms.");
             return result;
-        } else {
-            logger.error("The requested resource doesn't exist.");
-            throw new IOException("The requested resource doesn't exist.");
-        }
+		} catch (Exception e) {
+			logger.error(e.getMessage());
+            throw new LessException(e);
+		}
     }
     
     public void compile(File input, File output) throws LessException, IOException {
-        String content = compile(input);
-        if (!output.exists()) {
-            output.createNewFile();
-        }
-        BufferedWriter bw = new BufferedWriter(new FileWriter(output));
-        bw.write(content);
-        bw.close();
+    	try {
+	        String content = compile(input);
+	        if (!output.exists()) {
+	            output.createNewFile();
+	        }
+	        BufferedWriter bw = new BufferedWriter(new FileWriter(output));
+	        bw.write(content);
+	        bw.close();
+		} catch (Exception e) {
+			logger.error(e.getMessage());
+            throw new LessException(e);
+		}
     }
-    
-    public void destroy() {
-        JavaEmbedUtils.terminate(runtime);
-    }    
+
+    private synchronized String call(Function fn, Object[] args) {
+		return (String) Context.call(null, fn, scope, scope, args);
+    }
     
 }

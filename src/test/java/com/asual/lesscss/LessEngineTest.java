@@ -25,7 +25,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
-import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -43,12 +42,12 @@ public class LessEngineTest {
     
     @Test
     public void parse() throws LessException {
-        assertEquals("div { width: 2; }", engine.compile("div { width: 1 + 1 }"));
+        assertEquals("div {\n  width: 2;\n}\n", engine.compile("div { width: 1 + 1 }"));
     }
     
     @Test
     public void compileToString() throws LessException, IOException {
-        assertEquals("body { color: #f0f0f0; }", 
+        assertEquals("body {\n  color: #f0f0f0;\n}\n", 
                 engine.compile(getClass().getClassLoader().getResource("META-INF/test.css")));
     }
     
@@ -68,13 +67,8 @@ public class LessEngineTest {
             sb.append(strLine);
         }
         in.close();
-        assertEquals("body { color: #f0f0f0; }", sb.toString());
+        assertEquals("body {  color: #f0f0f0;}", sb.toString());
         tempFile.delete();
-    }
-    
-    @AfterClass
-    public static void after() {
-        engine.destroy();
     }
     
 }
