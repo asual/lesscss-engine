@@ -9,7 +9,8 @@
     <packaging>jar</packaging>
     <name>LESS Engine</name>
     <scm>
-        <url>scm:git:git://github.com/asual/lesscss-engine.git</url>
+        <url>http://github.com/asual/lesscss-engine</url>
+        <connection>scm:git:git://github.com/asual/lesscss-engine.git</connection>
     </scm>
     <version>2.0.0</version>
     <description>A Java wrapper for LESS (http://lesscss.org). LESS extends CSS with: variables, mixins, operations and nested rules.</description>
