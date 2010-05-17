@@ -7,7 +7,7 @@ var compileString = function(css) {
 };
 
 var compileFile = function(file) {
-    var result, charset = 'UTF-8', dirname = file.replace(/[^\/]+$/, '');
+    var result, charset = 'UTF-8', dirname = file.replace(/\\/g, '/').replace(/[^\/]+$/, '');
     less.Parser.importer = function(path, paths, fn) {
         new(less.Parser)({ optimization: 3 }).parse(readUrl(dirname + path, charset), function (e, root) {
             fn(root);
