@@ -44,6 +44,7 @@ public class LessEngine {
     public LessEngine() {
     	try {
         	logger.info("Initializing LESS Engine");
+        	URL browser = getClass().getClassLoader().getResource("META-INF/browser.js");
         	URL less = getClass().getClassLoader().getResource("META-INF/less.js");
         	URL engine = getClass().getClassLoader().getResource("META-INF/engine.js");
         	Context cx = Context.enter();
@@ -51,6 +52,7 @@ public class LessEngine {
         	Global global = new Global();
             global.init(cx);          
             scope = cx.initStandardObjects(global);
+    		cx.evaluateReader(scope, new InputStreamReader(browser.openConnection().getInputStream()), browser.getFile(), 1, null);
     		cx.evaluateReader(scope, new InputStreamReader(less.openConnection().getInputStream()), less.getFile(), 1, null);
     		cx.evaluateReader(scope, new InputStreamReader(engine.openConnection().getInputStream()), engine.getFile(), 1, null);
     		cs = (Function) scope.get("compileString", scope);

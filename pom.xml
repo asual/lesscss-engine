@@ -12,7 +12,7 @@
         <url>http://github.com/asual/lesscss-engine</url>
         <connection>scm:git:git://github.com/asual/lesscss-engine.git</connection>
     </scm>
-    <version>2.0.0</version>
+    <version>1.0.22</version>
     <description>A Java wrapper for LESS (http://lesscss.org). LESS extends CSS with: variables, mixins, operations and nested rules.</description>
     <url>http://www.asual.com/lesscss</url>
     <licenses>
