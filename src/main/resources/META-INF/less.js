@@ -1,5 +1,5 @@
 //
-// LESS - Leaner CSS v1.0.22
+// LESS - Leaner CSS v1.0.33
 // http://lesscss.org
 // 
 // Copyright (c) 2010, Alexis Sellier
@@ -145,22 +145,16 @@ if (typeof(window) === 'undefined') {
 //
 // less.js - parser
 //
-//    A relatively straight-forward recursive-descent parser.
+//    A relatively straight-forward predictive parser.
 //    There is no tokenization/lexing stage, the input is parsed
 //    in one sweep.
 //
 //    To make the parser fast enough to run in the browser, several
 //    optimization had to be made:
 //
-//    - Instead of the more commonly used technique of slicing the
-//      input string on every match, we use global regexps (/g),
-//      and move the `lastIndex` pointer on match, foregoing `slice()`
-//      completely. This gives us a 3x speed-up.
-//
-//    - Matching on a huge input is often cause of slowdowns,
-//      especially with the /g flag. The solution to that is to
-//      chunkify the input: we split it by /\n\n/, just to be on
-//      the safe side. The chunks are stored in the `chunks` var,
+//    - Matching and slicing on a huge input is often cause of slowdowns.
+//      The solution is to chunkify the input into smaller strings.
+//      The chunks are stored in the `chunks` var,
 //      `j` holds the current chunk index, and `current` holds
 //      the index of the current chunk in relation to `input`.
 //      This gives us an almost 4x speed-up.
@@ -185,10 +179,11 @@ less.Parser = function Parser(env) {
     var input,       // LeSS input string
         i,           // current index in `input`
         j,           // current chunk
+        temp,        // temporarily holds a chunk's state, for backtracking
+        memo,        // temporarily holds `i`, when backtracking
         furthest,    // furthest index the parser has gone to
         chunks,      // chunkified input
         current,     // index of current chunk, in `input`
-        inputLength,
         parser;
 
     var that = this;
@@ -219,11 +214,20 @@ less.Parser = function Parser(env) {
         }
     };
 
+    function save()    { temp = chunks[j], memo = i, current = i }
+    function restore() { chunks[j] = temp, i = memo, current = i }
+
+    function sync() {
+        if (i > current) {
+            chunks[j] = chunks[j].slice(i - current);
+            current = i;
+        }
+    }
     //
     // Parse from a token, regexp or string, and move forward if match
     //
     function $(tok) {
-        var match, args, length, c, index, endIndex;
+        var match, args, length, c, index, endIndex, k;
 
         //
         // Non-terminal
@@ -239,6 +243,7 @@ less.Parser = function Parser(env) {
         } else if (typeof(tok) === 'string') {
             match = input.charAt(i) === tok ? tok : null;
             length = 1;
+            sync ();
 
         //  1. We move to the next chunk, if necessary.
         //  2. Set the `lastIndex` to be relative
@@ -249,16 +254,12 @@ less.Parser = function Parser(env) {
         //     index, which we stored in [2].
         //
         } else {
-            if (i >= current + chunks[j].length &&
-                j < chunks.length - 1) { // 1.
-                current += chunks[j++].length;
-            }
-            tok.lastIndex = index =  i - current; // 2.
-            match = tok.exec(chunks[j]);
+            sync ();
 
-            if (match) {
+            if (match = tok.exec(chunks[j])) { // 3.
                 length = match[0].length;
-                if (tok.lastIndex - length !== index) { return } // 3.
+            } else {
+                return null;
             }
         }
 
@@ -268,14 +269,18 @@ less.Parser = function Parser(env) {
         // grammar is mostly white-space insensitive.
         //
         if (match) {
-            i += length;
-            endIndex = current + chunks[j].length;
+            mem = i += length;
+            endIndex = i + chunks[j].length - length;
 
-            while (i <= endIndex) {
+            while (i < endIndex) {
                 c = input.charCodeAt(i);
                 if (! (c === 32 || c === 10 || c === 9)) { break }
                 i++;
             }
+            chunks[j] = chunks[j].slice(length + (i - mem));
+            current = i;
+
+            if (chunks[j].length === 0 && j < chunks.length - 1) { j++ }
 
             if(typeof(match) === 'string') {
                 return match;
@@ -288,27 +293,26 @@ less.Parser = function Parser(env) {
     // Same as $(), but don't change the state of the parser,
     // just return the match.
     function peek(tok) {
-        var match;
-
         if (typeof(tok) === 'string') {
             return input.charAt(i) === tok;
         } else {
-            tok.lastIndex = i;
-
-            if ((match = tok.exec(input)) &&
-               (tok.lastIndex - match[0].length === i)) {
-                return match;
+            if (tok.test(chunks[j])) {
+                return true;
+            } else {
+                return false;
             }
         }
     }
 
-    this.env = env || {};
+    this.env = env = env || {};
 
     // The optimization level dictates the thoroughness of the parser,
     // the lower the number, the less nodes it will create in the tree.
     // This could matter for debugging, or if you want to access
     // the individual nodes in the tree.
     this.optimization = ('optimization' in this.env) ? this.env.optimization : 1;
+
+    this.env.filename = this.env.filename || null;
 
     //
     // The Parser
@@ -327,60 +331,60 @@ less.Parser = function Parser(env) {
             chunks = [];
             input = str.replace(/\r\n/g, '\n');
 
-            // Split the input into chunks,
-            // delimited by /\n\n/ and 
-            // removing comments (see rationale above),
-            // depending on the level of optimization.
-            if (that.optimization > 0) {
-                input = input.replace(/\/\*(?:[^*]|\*+[^\/*])*\*+\//g, function (comment) {
-                    return that.optimization > 1 ? '' : comment.replace(/\n(\s*\n)+/g, '\n');
-                });
-                if (that.optimization > 1) {
-                    chunks = (function (chunks) {
-                        var level = 0,
-                            j = 0,
-                            skip = /[^"'\{\}]+/g,
-                            match,
-                            chunk,
-                            inString;
+            // Split the input into chunks.
+            chunks = (function (chunks) {
+                var j = 0,
+                    skip = /[^"'`\{\}\/]+/g,
+                    comment = /\/\*(?:[^*]|\*+[^\/*])*\*+\/|\/\/.*/g,
+                    level = 0,
+                    match,
+                    chunk = chunks[0],
+                    inString;
 
-                        for (var i = 0, c; i < input.length; i++) {
-                            chunk = chunks[j];
+                for (var i = 0, c, cc; i < input.length; i++) {
+                    skip.lastIndex = i;
+                    if (match = skip.exec(input)) {
+                        if (match.index === i) {
+                            i += match[0].length;
+                            chunk.push(match[0]);
+                        }
+                    }
+                    c = input.charAt(i);
+                    comment.lastIndex = i;
 
-                            skip.lastIndex = i;
-
-                            if (match = skip.exec(input)) {
+                    if (!inString && c === '/') {
+                        cc = input.charAt(i + 1);
+                        if (cc === '/' || cc === '*') {
+                            if (match = comment.exec(input)) {
                                 if (match.index === i) {
                                     i += match[0].length;
                                     chunk.push(match[0]);
+                                    c = input.charAt(i);
                                 }
-                            }
-                            c = input.charAt(i);
-
-                            if (c === '}' && !inString) {
-                                level --;
-                                chunk.push(c);
-                                if (level === 0) {
-                                    chunks[++j] = [];
-                                }
-                            } else {
-                                if (c === '{' && !inString) {
-                                    level ++;
-                                } else if (c === '"' || c === "'") {
-                                    inString = inString === c ? false : c;
-                                }
-                                chunk.push(c);
                             }
                         }
-                        return chunks.map(function (c) { return c.join('') });;
-                    })([[]]);
-                } else {
-                    chunks = [input];
+                    }
+
+                    if        (c === '{' && !inString) { level ++;
+                        chunk.push(c);
+                    } else if (c === '}' && !inString) { level --;
+                        chunk.push(c);
+                        chunks[++j] = chunk = [];
+                    } else {
+                        if (c === '"' || c === "'" || c === '`') {
+                            if (! inString) {
+                                inString = c;
+                            } else {
+                                inString = inString === c ? false : inString;
+                            }
+                        }
+                        chunk.push(c);
+                    }
                 }
-            } else {
-                chunks = [input];
-            }
-            inputLength = input.length;
+                if (level > 0) { throw new(Error)("Missing closing '}'") }
+
+                return chunks.map(function (c) { return c.join('') });;
+            })([[]]);
 
             // Start with the primary rule.
             // The whole syntax tree is held under a Ruleset node,
@@ -389,21 +393,44 @@ less.Parser = function Parser(env) {
             root = new(tree.Ruleset)([], $(this.parsers.primary));
             root.root = true;
 
-            root.toCSS = (function (toCSS) {
+            root.toCSS = (function (evaluate) {
                 var line, lines, column;
 
-                return function (options) {
+                return function (options, variables) {
+                    var frames = [];
+
                     options = options || {};
-                    try {
-                        var css = toCSS.call(this, [], {
-                            frames: [],
-                            compress: options.compress || false
+                    //
+                    // Allows setting variables with a hash, so:
+                    //
+                    //   `{ color: new(tree.Color)('#f01') }` will become:
+                    //
+                    //   new(tree.Rule)('@color',
+                    //     new(tree.Value)([
+                    //       new(tree.Expression)([
+                    //         new(tree.Color)('#f01')
+                    //       ])
+                    //     ])
+                    //   )
+                    //
+                    if (typeof(variables) === 'object' && !Array.isArray(variables)) {
+                        variables = Object.keys(variables).map(function (k) {
+                            var value = variables[k];
+
+                            if (! (value instanceof tree.Value)) {
+                                if (! (value instanceof tree.Expression)) {
+                                    value = new(tree.Expression)([value]);
+                                }
+                                value = new(tree.Value)([value]);
+                            }
+                            return new(tree.Rule)('@' + k, value, false, 0);
                         });
-                        if (options.compress) {
-                            return css.replace(/(\s)+/g, "$1");
-                        } else {
-                            return css;
-                        }
+                        frames = [new(tree.Ruleset)(null, variables)];
+                    }
+
+                    try {
+                        var css = evaluate.call(this, { frames: frames })
+                                          .toCSS([], { compress: options.compress || false });
                     } catch (e) {
                         lines = input.split('\n');
                         line = getLine(e.index);
@@ -413,13 +440,13 @@ less.Parser = function Parser(env) {
                                  n--) { column++ }
 
                         throw {
-                            name: "NameError",
+                            type: e.type,
                             message: e.message,
                             filename: env.filename,
                             index: e.index,
-                            line: line + 1,
+                            line: typeof(line) === 'number' ? line + 1 : null,
                             callLine: e.call && (getLine(e.call) + 1),
-                            callExtract: lines[getLine(e.call) - 1],
+                            callExtract: lines[getLine(e.call)],
                             stack: e.stack,
                             column: column,
                             extract: [
@@ -429,12 +456,17 @@ less.Parser = function Parser(env) {
                             ]
                         };
                     }
+                    if (options.compress) {
+                        return css.replace(/(\s)+/g, "$1");
+                    } else {
+                        return css;
+                    }
 
                     function getLine(index) {
-                        return (input.slice(0, index).match(/\n/g) || "").length;
+                        return index ? (input.slice(0, index).match(/\n/g) || "").length : null;
                     }
                 };
-            })(root.toCSS);
+            })(root.eval);
 
             // If `i` is smaller than the `input.length - 1`,
             // it means the parser wasn't able to parse the whole
@@ -520,10 +552,10 @@ less.Parser = function Parser(env) {
             primary: function () {
                 var node, root = [];
 
-                while (node = $(this.mixin.definition) || $(this.rule)    ||  $(this.ruleset) ||
-                              $(this.mixin.call)       || $(this.comment) ||
-                              $(/[\n\s]+/g)            || $(this.directive)) {
-                    root.push(node);
+                while ((node = $(this.mixin.definition) || $(this.rule)    ||  $(this.ruleset) ||
+                               $(this.mixin.call)       || $(this.comment) ||  $(this.directive))
+                               || $(/^[\s\n]+/)) {
+                    node && root.push(node);
                 }
                 return root;
             },
@@ -537,8 +569,8 @@ less.Parser = function Parser(env) {
                 if (input.charAt(i) !== '/') return;
 
                 if (input.charAt(i + 1) === '/') {
-                    return new(tree.Comment)($(/\/\/.*/g), true);
-                } else if (comment = $(/\/\*(?:[^*]|\*+[^\/*])*\*+\/\n?/g)) {
+                    return new(tree.Comment)($(/^\/\/.*/), true);
+                } else if (comment = $(/^\/\*(?:[^*]|\*+[^\/*])*\*+\/\n?/)) {
                     return new(tree.Comment)(comment);
                 }
             },
@@ -556,7 +588,7 @@ less.Parser = function Parser(env) {
                     var str;
                     if (input.charAt(i) !== '"' && input.charAt(i) !== "'") return;
 
-                    if (str = $(/"((?:[^"\\\r\n]|\\.)*)"|'((?:[^'\\\r\n]|\\.)*)'/g)) {
+                    if (str = $(/^"((?:[^"\\\r\n]|\\.)*)"|'((?:[^'\\\r\n]|\\.)*)'/)) {
                         return new(tree.Quoted)(str[0], str[1] || str[2]);
                     }
                 },
@@ -568,7 +600,7 @@ less.Parser = function Parser(env) {
                 //
                 keyword: function () {
                     var k;
-                    if (k = $(/[A-Za-z-]+/g)) { return new(tree.Keyword)(k) }
+                    if (k = $(/^[A-Za-z-]+/)) { return new(tree.Keyword)(k) }
                 },
 
                 //
@@ -584,15 +616,20 @@ less.Parser = function Parser(env) {
                 call: function () {
                     var name, args;
 
-                    if (! (name = $(/([\w-]+|%)\(/g))) return;
+                    if (! (name = /^([\w-]+|%)\(/.exec(chunks[j]))) return;
 
-                    if (name[1].toLowerCase() === 'alpha') { return $(this.alpha) }
+                    name = name[1].toLowerCase();
+
+                    if (name === 'url') { return null }
+                    else                { i += name.length + 1 }
+
+                    if (name === 'alpha') { return $(this.alpha) }
 
                     args = $(this.entities.arguments);
 
                     if (! $(')')) return;
 
-                    if (name) { return new(tree.Call)(name[1], args) }
+                    if (name) { return new(tree.Call)(name, args) }
                 },
                 arguments: function () {
                     var args = [], arg;
@@ -619,11 +656,12 @@ less.Parser = function Parser(env) {
                 url: function () {
                     var value;
 
-                    if (input.charAt(i) !== 'u' || !$(/url\(/g)) return;
-                    value = $(this.entities.quoted) || $(/[-\w%@$\/.&=:;#+?]+/g);
+                    if (input.charAt(i) !== 'u' || !$(/^url\(/)) return;
+                    value = $(this.entities.quoted) || $(this.entities.variable) || $(/^[-\w%@$\/.&=:;#+?]+/) || "";
                     if (! $(')')) throw new(Error)("missing closing ) for url()");
 
-                    return new(tree.URL)(value.value ? value : new(tree.Anonymous)(value));
+                    return new(tree.URL)((value.value || value instanceof tree.Variable)
+                                        ? value : new(tree.Anonymous)(value), imports.paths);
                 },
 
                 //
@@ -637,7 +675,7 @@ less.Parser = function Parser(env) {
                 variable: function () {
                     var name, index = i;
 
-                    if (input.charAt(i) === '@' && (name = $(/@[\w-]+/g))) {
+                    if (input.charAt(i) === '@' && (name = $(/^@[\w-]+/))) {
                         return new(tree.Variable)(name, index);
                     }
                 },
@@ -652,7 +690,7 @@ less.Parser = function Parser(env) {
                 color: function () {
                     var rgb;
 
-                    if (input.charAt(i) === '#' && (rgb = $(/#([a-fA-F0-9]{6}|[a-fA-F0-9]{3})/g))) {
+                    if (input.charAt(i) === '#' && (rgb = $(/^#([a-fA-F0-9]{6}|[a-fA-F0-9]{3})/))) {
                         return new(tree.Color)(rgb[1]);
                     }
                 },
@@ -666,8 +704,23 @@ less.Parser = function Parser(env) {
                     var value, c = input.charCodeAt(i);
                     if ((c > 57 || c < 45) || c === 47) return;
 
-                    if (value = $(/(-?\d*\.?\d+)(px|%|em|pc|ex|in|deg|s|ms|pt|cm|mm)?/g)) {
+                    if (value = $(/^(-?\d*\.?\d+)(px|%|em|pc|ex|in|deg|s|ms|pt|cm|mm|rad|grad|turn)?/)) {
                         return new(tree.Dimension)(value[1], value[2]);
+                    }
+                },
+
+                //
+                // JavaScript code to be evaluated
+                //
+                //     `window.location.href`
+                //
+                javascript: function () {
+                    var str;
+
+                    if (input.charAt(i) !== '`') { return }
+
+                    if (str = $(/^`([^`]*)`/)) {
+                        return new(tree.JavaScript)(str[1], i);
                     }
                 }
             },
@@ -680,7 +733,7 @@ less.Parser = function Parser(env) {
             variable: function () {
                 var name;
 
-                if (input.charAt(i) === '@' && (name = $(/(@[\w-]+)\s*:/g))) { return name[1] }
+                if (input.charAt(i) === '@' && (name = $(/^(@[\w-]+)\s*:/))) { return name[1] }
             },
 
             //
@@ -693,7 +746,7 @@ less.Parser = function Parser(env) {
             shorthand: function () {
                 var a, b;
 
-                if (! peek(/[@\w.-]+\/[@\w.-]+/g)) return;
+                if (! peek(/^[@\w.%-]+\/[@\w.-]+/)) return;
 
                 if ((a = $(this.entity)) && $('/') && (b = $(this.entity))) {
                     return new(tree.Shorthand)(a, b);
@@ -716,9 +769,11 @@ less.Parser = function Parser(env) {
                 // selector for now.
                 //
                 call: function () {
-                    var elements = [], e, c, args, index = i;
+                    var elements = [], e, c, args, index = i, s = input.charAt(i);
 
-                    while (e = $(/[#.][\w-]+/g)) {
+                    if (s !== '.' && s !== '#') { return }
+
+                    while (e = $(/^[#.][\w-]+/)) {
                         elements.push(new(tree.Element)(c, e));
                         c = $('>');
                     }
@@ -751,23 +806,24 @@ less.Parser = function Parser(env) {
                 definition: function () {
                     var name, params = [], match, ruleset, param, value;
 
-                    if (input.charAt(i) !== '.' || peek(/[^{]*(;|})/g)) return;
+                    if ((input.charAt(i) !== '.' && input.charAt(i) !== '#') ||
+                        peek(/^[^{]*(;|})/)) return;
 
-                    if (match = $(/([#.][\w-]+)\s*\(/g)) {
+                    if (match = $(/^([#.][\w-]+)\s*\(/)) {
                         name = match[1];
 
-                        while (param = $(/@[\w-]+/g) || $(this.entities.literal)
-                                                     || $(this.entities.keyword)) {
+                        while (param = $(this.entities.variable) || $(this.entities.literal)
+                                                                 || $(this.entities.keyword)) {
                             // Variable
-                            if (param[0] === '@') {
+                            if (param instanceof tree.Variable) {
                                 if ($(':')) {
                                     if (value = $(this.expression)) {
-                                        params.push({ name: param, value: value });
+                                        params.push({ name: param.name, value: value });
                                     } else {
                                         throw new(Error)("Expected value");
                                     }
                                 } else {
-                                    params.push({ name: param });
+                                    params.push({ name: param.name });
                                 }
                             } else {
                                 params.push({ value: param });
@@ -791,7 +847,7 @@ less.Parser = function Parser(env) {
             //
             entity: function () {
                 return $(this.entities.literal) || $(this.entities.variable) || $(this.entities.url) ||
-                       $(this.entities.call)    || $(this.entities.keyword);
+                       $(this.entities.call)    || $(this.entities.keyword)  || $(this.entities.javascript);
             },
 
             //
@@ -811,8 +867,8 @@ less.Parser = function Parser(env) {
             alpha: function () {
                 var value;
 
-                if (! $(/opacity=/gi)) return;
-                if (value = $(/\d+/g) || $(this.entities.variable)) {
+                if (! $(/^opacity=/i)) return;
+                if (value = $(/^\d+/) || $(this.entities.variable)) {
                     if (! $(')')) throw new(Error)("missing closing ) for alpha()");
                     return new(tree.Alpha)(value);
                 }
@@ -834,7 +890,7 @@ less.Parser = function Parser(env) {
                 var e, t;
 
                 c = $(this.combinator);
-                e = $(/[.#:]?[\w-]+/g) || $('*') || $(this.attribute) || $(/\([^)@]+\)/g);
+                e = $(/^[.#:]?[\w-]+/) || $('*') || $(this.attribute) || $(/^\([^)@]+\)/);
 
                 if (e) { return new(tree.Element)(c, e) }
             },
@@ -849,11 +905,20 @@ less.Parser = function Parser(env) {
             // we deal with this in *combinator.js*.
             //
             combinator: function () {
-                var match;
-                if (match = $(/[+>~]/g) || $('&') || $(/::/g)) {
-                    return new(tree.Combinator)(match);
+                var match, c = input.charAt(i);
+
+                if (c === '>' || c === '&' || c === '+' || c === '~') {
+                    i++;
+                    while (input.charAt(i) === ' ') { i++ }
+                    return new(tree.Combinator)(c);
+                } else if (c === ':' && input.charAt(i + 1) === ':') {
+                    i += 2;
+                    while (input.charAt(i) === ' ') { i++ }
+                    return new(tree.Combinator)('::');
+                } else if (input.charAt(i - 1) === ' ') {
+                    return new(tree.Combinator)(" ");
                 } else {
-                    return new(tree.Combinator)(input.charAt(i - 1) === " " ? " " : null);
+                    return new(tree.Combinator)(null);
                 }
             },
 
@@ -866,23 +931,27 @@ less.Parser = function Parser(env) {
             // Selectors are made out of one or more Elements, see above.
             //
             selector: function () {
-                var sel, e, elements = [], match;
+                var sel, e, elements = [], c, match;
 
-                while (e = $(this.element)) { elements.push(e) }
+                while (e = $(this.element)) {
+                    c = input.charAt(i);
+                    elements.push(e)
+                    if (c === '{' || c === '}' || c === ';' || c === ',') { break }
+                }
 
                 if (elements.length > 0) { return new(tree.Selector)(elements) }
             },
             tag: function () {
-                return $(/[a-zA-Z][a-zA-Z-]*[0-9]?/g) || $('*');
+                return $(/^[a-zA-Z][a-zA-Z-]*[0-9]?/) || $('*');
             },
             attribute: function () {
                 var attr = '', key, val, op;
 
                 if (! $('[')) return;
 
-                if (key = $(/[a-z-]+/g) || $(this.entities.quoted)) {
-                    if ((op = $(/[|~*$^]?=/g)) &&
-                        (val = $(this.entities.quoted) || $(/[\w-]+/g))) {
+                if (key = $(/^[a-zA-Z-]+/) || $(this.entities.quoted)) {
+                    if ((op = $(/^[|~*$^]?=/)) &&
+                        (val = $(this.entities.quoted) || $(/^[\w-]+/))) {
                         attr = [key, op, val.toCSS ? val.toCSS() : val].join('');
                     } else { attr = key }
                 }
@@ -908,9 +977,10 @@ less.Parser = function Parser(env) {
             // div, .class, body > p {...}
             //
             ruleset: function () {
-                var selectors = [], s, rules, match, memo = i;
+                var selectors = [], s, rules, match;
+                save();
 
-                if (match = peek(/([.#: \w-]+)[\s\n]*\{/g)) {
+                if (match = /^([.#: \w-]+)[\s\n]*\{/.exec(chunks[j])) {
                     i += match[0].length - 1;
                     selectors = [new(tree.Selector)([new(tree.Element)(null, match[1])])];
                 } else {
@@ -926,15 +996,17 @@ less.Parser = function Parser(env) {
                 } else {
                     // Backtrack
                     furthest = i;
-                    i = memo;
+                    restore();
                 }
             },
             rule: function () {
-                var value;
-                var memo = i;
+                var value, c = input.charAt(i), important;
+                save();
 
-                if (name = $(this.property) || $(this.variable)) {
-                    if ((name.charAt(0) != '@') && (match = peek(/([^@+\/*(;{}-]*);/g))) {
+                if (c === '.' || c === '#' || c === '&') { return }
+
+                if (name = $(this.variable) || $(this.property)) {
+                    if ((name.charAt(0) != '@') && (match = /^([^@+\/'"*`(;{}-]*);/.exec(chunks[j]))) {
                         i += match[0].length - 1;
                         value = new(tree.Anonymous)(match[1]);
                     } else if (name === "font") {
@@ -942,12 +1014,13 @@ less.Parser = function Parser(env) {
                     } else {
                         value = $(this.value);
                     }
+                    important = $(this.important);
 
-                    if ($(this.end)) {
-                        return new(tree.Rule)(name, value, memo);
+                    if (value && $(this.end)) {
+                        return new(tree.Rule)(name, value, important, memo);
                     } else {
                         furthest = i;
-                        i = memo;
+                        restore();
                     }
                 }
             },
@@ -964,7 +1037,7 @@ less.Parser = function Parser(env) {
             //
             "import": function () {
                 var path;
-                if ($(/@import\s+/g) &&
+                if ($(/^@import\s+/) &&
                     (path = $(this.entities.quoted) || $(this.entities.url)) &&
                     $(';')) {
                     return new(tree.Import)(path, imports);
@@ -983,12 +1056,12 @@ less.Parser = function Parser(env) {
 
                 if (value = $(this['import'])) {
                     return value;
-                } else if (name = $(/@media|@page/g)) {
-                    types = $(/[^{]+/g).trim();
+                } else if (name = $(/^@media|@page/)) {
+                    types = $(/^[^{]+/).trim();
                     if (rules = $(this.block)) {
                         return new(tree.Directive)(name + " " + types, rules);
                     }
-                } else if (name = $(/@[-a-z]+/g)) {
+                } else if (name = $(/^@[-a-z]+/)) {
                     if (name === '@font-face') {
                         if (rules = $(this.block)) {
                             return new(tree.Directive)(name, rules);
@@ -1012,7 +1085,7 @@ less.Parser = function Parser(env) {
                         if (! $(',')) { break }
                     }
                 }
-                return new(tree.Value)(value, $(this.important));
+                return new(tree.Value)(value);
             },
 
             //
@@ -1030,14 +1103,15 @@ less.Parser = function Parser(env) {
                     expressions.push(e);
                     if (! $(',')) { break }
                 }
-                important = $(this.important);
 
                 if (expressions.length > 0) {
-                    return new(tree.Value)(expressions, important);
+                    return new(tree.Value)(expressions);
                 }
             },
             important: function () {
-                return $(/!\s*important/g);
+                if (input.charAt(i) === '!') {
+                    return $(/^! *important/);
+                }
             },
             sub: function () {
                 var e;
@@ -1049,7 +1123,7 @@ less.Parser = function Parser(env) {
             multiplication: function () {
                 var m, a, op, operation;
                 if (m = $(this.operand)) {
-                    while ((op = $(/[\/*]/g)) && (a = $(this.operand))) {
+                    while ((op = ($('/') || $('*'))) && (a = $(this.operand))) {
                         operation = new(tree.Operation)(op, [operation || m, a]);
                     }
                     return operation || m;
@@ -1058,7 +1132,7 @@ less.Parser = function Parser(env) {
             addition: function () {
                 var m, a, op, operation;
                 if (m = $(this.multiplication)) {
-                    while ((op = $(/[-+]\s+/g) || (input.charAt(i - 1) != ' ' && $(/[-+]/g))) &&
+                    while ((op = $(/^[-+]\s+/) || (input.charAt(i - 1) != ' ' && ($('+') || $('-')))) &&
                            (a = $(this.multiplication))) {
                         operation = new(tree.Operation)(op, [operation || m, a]);
                     }
@@ -1072,7 +1146,8 @@ less.Parser = function Parser(env) {
             //
             operand: function () {
                 return $(this.sub) || $(this.entities.dimension) ||
-                       $(this.entities.color) || $(this.entities.variable);
+                       $(this.entities.color) || $(this.entities.variable) ||
+                       $(this.entities.call);
             },
 
             //
@@ -1095,7 +1170,7 @@ less.Parser = function Parser(env) {
             property: function () {
                 var name;
 
-                if (name = $(/(\*?-?[-a-z_0-9]+)\s*:/g)) {
+                if (name = $(/^(\*?-?[-a-z_0-9]+)\s*:/)) {
                     return name[1];
                 }
             }
@@ -1108,12 +1183,13 @@ if (typeof(window) !== 'undefined') {
     // Used by `@import` directives
     //
     less.Parser.importer = function (path, paths, callback) {
-        if (path[0] !== '/' && paths.length > 0) {
+        if (path.charAt(0) !== '/' && paths.length > 0) {
             path = paths[0] + path;
         }
-        loadStyleSheet({ href: path, title: path }, function (root) {
-            callback(root);
-        });
+        // We pass `true` as 3rd argument, to force the reload of the import.
+        // This is so we can get the syntax tree as opposed to just the CSS output,
+        // as we need this to evaluate the current stylesheet.
+        loadStyleSheet({ href: path, title: path }, callback, true);
     };
 }
 
@@ -1203,14 +1279,14 @@ tree.functions = {
         return this.desaturate(color, new(tree.Dimension)(100));
     },
     e: function (str) {
-        return new(tree.Anonymous)(str);
+        return new(tree.Anonymous)(str instanceof tree.JavaScript ? str.evaluated : str);
     },
     '%': function (quoted /* arg, arg, ...*/) {
         var args = Array.prototype.slice.call(arguments, 1),
-            str = quoted.content;
+            str = quoted.value;
 
         for (var i = 0; i < args.length; i++) {
-            str = str.replace(/%s/,    args[i].content)
+            str = str.replace(/%s/,    args[i].value)
                      .replace(/%[da]/, args[i].toCSS());
         }
         str = str.replace(/%%/g, '%');
@@ -1257,7 +1333,7 @@ tree.Alpha.prototype = {
 (function (tree) {
 
 tree.Anonymous = function (string) {
-    this.value = string.content || string;
+    this.value = string.value || string;
 };
 tree.Anonymous.prototype = {
     toCSS: function () {
@@ -1470,7 +1546,7 @@ tree.Directive.prototype = {
     },
     eval: function (env) {
         env.frames.unshift(this);
-        this.ruleset && this.ruleset.evalRules(env);
+        this.ruleset = this.ruleset && this.ruleset.eval(env);
         env.frames.shift();
         return this;
     },
@@ -1525,9 +1601,9 @@ tree.Expression.prototype = {
             return this.value[0].eval(env);
         }
     },
-    toCSS: function () {
+    toCSS: function (env) {
         return this.value.map(function (e) {
-            return e.toCSS();
+            return e.toCSS(env);
         }).join(' ');
     }
 };
@@ -1548,18 +1624,14 @@ tree.Expression.prototype = {
 //
 tree.Import = function (path, imports) {
     var that = this;
-print(that.Quoted);
-print(that)
-for (var p in that) {
-    print(p);
-}
+
     this._path = path;
 
     // The '.less' extension is optional
     if (path instanceof tree.Quoted) {
-        this.path = /\.(le?|c)ss$/.test(path.content) ? path.content : path.content + '.less';
+        this.path = /\.(le?|c)ss$/.test(path.value) ? path.value : path.value + '.less';
     } else {
-        this.path = path.value.content || path.value;
+        this.path = path.value.value || path.value;
     }
 
     this.css = /css$/.test(this.path);
@@ -1592,24 +1664,64 @@ tree.Import.prototype = {
             return "";
         }
     },
-    eval: function () {
+    eval: function (env) {
+        var ruleset;
+
         if (this.css) {
             return this;
         } else {
-            for (var i = 0; i < this.root.rules.length; i++) {
-                if (this.root.rules[i] instanceof tree.Import) {
+            ruleset = new(tree.Ruleset)(null, this.root.rules.slice(0));
+
+            for (var i = 0; i < ruleset.rules.length; i++) {
+                if (ruleset.rules[i] instanceof tree.Import) {
                     Array.prototype
                          .splice
-                         .apply(this.root.rules,
-                                [i, 1].concat(this.root.rules[i].eval()));
+                         .apply(ruleset.rules,
+                                [i, 1].concat(ruleset.rules[i].eval(env)));
                 }
             }
-            return this.root.rules;
+            return ruleset.rules;
         }
     }
 };
 
 })(require('less/tree'));
+(function (tree) {
+
+tree.JavaScript = function (string, index) {
+    this.expression = string;
+    this.index = index;
+};
+tree.JavaScript.prototype = {
+    toCSS: function () {
+        return JSON.stringify(this.evaluated);
+    },
+    eval: function (env) {
+        var result,
+            expression = new(Function)('return (' + this.expression + ')'),
+            context = {};
+
+        for (var k in env.frames[0].variables()) {
+            context[k.slice(1)] = {
+                value: env.frames[0].variables()[k].value,
+                toJS: function () {
+                    return this.value.eval(env).toCSS();
+                }
+            };
+        }
+
+        try {
+            this.evaluated = expression.call(context);
+        } catch (e) {
+            throw { message: "JavaScript evaluation error: '" + e.name + ': ' + e.message + "'" ,
+                    index: this.index };
+        }
+        return this;
+    }
+};
+
+})(require('less/tree'));
+
 (function (tree) {
 
 tree.Keyword = function (value) { this.value = value };
@@ -1637,10 +1749,10 @@ tree.mixin.Call.prototype = {
                     if (mixins[m].match(this.arguments, env)) {
                         try {
                             Array.prototype.push.apply(
-                                  rules, mixins[m].eval(this.arguments, env).rules);
+                                  rules, mixins[m].eval(env, this.arguments).rules);
                             match = true;
                         } catch (e) {
-                            throw { message: e.message, index: e.index, call: this.index };
+                            throw { message: e.message, index: e.index, stack: e.stack, call: this.index };
                         }
                     }
                 }
@@ -1673,14 +1785,16 @@ tree.mixin.Definition = function (name, params, rules) {
         else                    { return count }
     }, 0);
     this.parent = tree.Ruleset.prototype;
+    this.frames = [];
 };
 tree.mixin.Definition.prototype = {
-    toCSS: function () { return "" },
-    variable: function (name) { return this.parent.variable.call(this, name) },
-    find:     function ()     { return this.parent.find.apply(this, arguments) },
-    rulesets: function ()     { return this.parent.rulesets.apply(this) },
+    toCSS:     function () { return "" },
+    variable:  function (name) { return this.parent.variable.call(this, name) },
+    variables: function ()     { return this.parent.variables.call(this) },
+    find:      function ()     { return this.parent.find.apply(this, arguments) },
+    rulesets:  function ()     { return this.parent.rulesets.apply(this) },
 
-    eval: function (args, env) {
+    eval: function (env, args) {
         var frame = new(tree.Ruleset)(null, []), context;
 
         for (var i = 0, val; i < this.params.length; i++) {
@@ -1693,21 +1807,20 @@ tree.mixin.Definition.prototype = {
                 }
             }
         }
-        return new(tree.Ruleset)(null, this.rules).evalRules({
-            frames: [this, frame].concat(env.frames)
+        return new(tree.Ruleset)(null, this.rules.slice(0)).eval({
+            frames: [this, frame].concat(this.frames, env.frames)
         });
     },
     match: function (args, env) {
-        var argsLength = (args && args.length) || 0;
+        var argsLength = (args && args.length) || 0, len;
 
-        if (argsLength < this.required) {
-            return false;
-        }
+        if (argsLength < this.required) { return false }
 
-        for (var i = 0; i < Math.min(argsLength, this.arity); i++) {
+        len = Math.min(argsLength, this.arity);
+
+        for (var i = 0; i < len; i++) {
             if (!this.params[i].name) {
-                if (args[i].wildcard) { continue }
-                else if (args[i].eval(env).toCSS() != this.params[i].value.eval(env).toCSS()) {
+                if (args[i].eval(env).toCSS() != this.params[i].value.eval(env).toCSS()) {
                     return false;
                 }
             }
@@ -1751,13 +1864,13 @@ tree.operate = function (op, a, b) {
 })(require('less/tree'));
 (function (tree) {
 
-tree.Quoted = function (value, content) {
-    this.value = value;
-    this.content = content;
+tree.Quoted = function (str, content) {
+    this.value = content || '';
+    this.quote = str.charAt(0);
 };
 tree.Quoted.prototype = {
     toCSS: function () {
-        return this.value;
+        return this.quote + this.value + this.quote;
     },
     eval: function () {
         return this;
@@ -1767,9 +1880,10 @@ tree.Quoted.prototype = {
 })(require('less/tree'));
 (function (tree) {
 
-tree.Rule = function (name, value, index) {
+tree.Rule = function (name, value, important, index) {
     this.name = name;
     this.value = (value instanceof tree.Value) ? value : new(tree.Value)([value]);
+    this.important = important ? ' ' + important.trim() : '';
     this.index = index;
 
     if (name.charAt(0) === '@') {
@@ -1779,12 +1893,14 @@ tree.Rule = function (name, value, index) {
 tree.Rule.prototype.toCSS = function (env) {
     if (this.variable) { return "" }
     else {
-        return this.name + (env.compress ? ':' : ': ') + this.value.toCSS(env) + ";";
+        return this.name + (env.compress ? ':' : ': ') +
+               this.value.toCSS(env) +
+               this.important + ";";
     }
 };
 
 tree.Rule.prototype.eval = function (context) {
-    return new(tree.Rule)(this.name, this.value.eval(context));
+    return new(tree.Rule)(this.name, this.value.eval(context), this.important, this.index);
 };
 
 tree.Shorthand = function (a, b) {
@@ -1808,41 +1924,76 @@ tree.Ruleset = function (selectors, rules) {
     this._lookups = {};
 };
 tree.Ruleset.prototype = {
-    eval: function () { return this },
-    evalRules: function (context) {
-        var rules = [];
+    eval: function (env) {
+        var ruleset = new(tree.Ruleset)(this.selectors, this.rules.slice(0));
 
-        this.rules.forEach(function (rule) {
-            if (rule.evalRules) {
-                rules.push(rule.evalRules(context));
-            } else if (rule instanceof tree.mixin.Call) {
-                Array.prototype.push.apply(rules, rule.eval(context));
-            } else {
-                rules.push(rule.eval ? rule.eval(context) : '');
+        ruleset.root = this.root;
+
+        // push the current ruleset to the frames stack
+        env.frames.unshift(ruleset);
+
+        // Evaluate imports
+        if (ruleset.root) {
+            for (var i = 0; i < ruleset.rules.length; i++) {
+                if (ruleset.rules[i] instanceof tree.Import) {
+                    Array.prototype.splice
+                         .apply(ruleset.rules, [i, 1].concat(ruleset.rules[i].eval(env)));
+                }
             }
-        });
-        this.rules = rules;
-        return this;
+        }
+
+        // Store the frames around mixin definitions,
+        // so they can be evaluated like closures when the time comes.
+        for (var i = 0; i < ruleset.rules.length; i++) {
+            if (ruleset.rules[i] instanceof tree.mixin.Definition) {
+                ruleset.rules[i].frames = env.frames.slice(0);
+            }
+        }
+
+        // Evaluate mixin calls.
+        for (var i = 0; i < ruleset.rules.length; i++) {
+            if (ruleset.rules[i] instanceof tree.mixin.Call) {
+                Array.prototype.splice
+                     .apply(ruleset.rules, [i, 1].concat(ruleset.rules[i].eval(env)));
+            }
+        }
+
+        // Evaluate everything else
+        for (var i = 0, rule; i < ruleset.rules.length; i++) {
+            rule = ruleset.rules[i];
+
+            if (! (rule instanceof tree.mixin.Definition)) {
+                ruleset.rules[i] = rule.eval ? rule.eval(env) : rule;
+            }
+        }
+
+        // Pop the stack
+        env.frames.shift();
+
+        return ruleset;
     },
     match: function (args) {
         return !args || args.length === 0;
     },
-    variable: function (name) {
-        if (this._variables) { return this._variables[name] }
+    variables: function () {
+        if (this._variables) { return this._variables }
         else {
-            return (this._variables = this.rules.reduce(function (hash, r) {
+            return this._variables = this.rules.reduce(function (hash, r) {
                 if (r instanceof tree.Rule && r.variable === true) {
                     hash[r.name] = r;
                 }
                 return hash;
-            }, {}))[name];
+            }, {});
         }
+    },
+    variable: function (name) {
+        return this.variables()[name];
     },
     rulesets: function () {
         if (this._rulesets) { return this._rulesets }
         else {
             return this._rulesets = this.rules.filter(function (r) {
-                if (r instanceof tree.Ruleset || r instanceof tree.mixin.Definition) { return r }
+                return (r instanceof tree.Ruleset) || (r instanceof tree.mixin.Definition);
             });
         }
     },
@@ -1893,33 +2044,13 @@ tree.Ruleset.prototype = {
                     }
                 }
             }
-        } else {
-            for (var i = 0; i < this.rules.length; i++) {
-                if (this.rules[i] instanceof tree.Import) {
-                    Array.prototype.splice
-                         .apply(this.rules, [i, 1].concat(this.rules[i].eval(env)));
-                }
-            }
         }
 
-        // push the current ruleset to the frames stack
-        env.frames.unshift(this);
-
-        // Evaluate mixins
-        for (var i = 0; i < this.rules.length; i++) {
-            if (this.rules[i] instanceof tree.mixin.Call) {
-                Array.prototype.splice
-                     .apply(this.rules, [i, 1].concat(this.rules[i].eval(env)));
-            }
-        }
-
-        // Evaluate rules and rulesets
+        // Compile rules and rulesets
         for (var i = 0; i < this.rules.length; i++) {
             rule = this.rules[i];
 
-            if (rule instanceof tree.Directive) {
-                rulesets.push(rule.eval(env).toCSS(paths, env));
-            } else if (rule.rules) {
+            if (rule.rules || (rule instanceof tree.Directive)) {
                 rulesets.push(rule.toCSS(paths, env));
             } else if (rule instanceof tree.Comment) {
                 if (!rule.silent) {
@@ -1931,7 +2062,7 @@ tree.Ruleset.prototype = {
                 }
             } else {
                 if (rule.toCSS && !rule.variable) {
-                    rules.push(rule.eval(env).toCSS(env));
+                    rules.push(rule.toCSS(env));
                 } else if (rule.value && !rule.variable) {
                     rules.push(rule.value.toString());
                 }
@@ -1959,9 +2090,6 @@ tree.Ruleset.prototype = {
             }
         }
         css.push(rulesets);
-
-        // Pop the stack
-        env.frames.shift();
 
         return css.join('') + (env.compress ? '\n' : '');
     }
@@ -1997,14 +2125,21 @@ tree.Selector.prototype.toCSS = function (env) {
 })(require('less/tree'));
 (function (tree) {
 
-tree.URL = function (val) {
+tree.URL = function (val, paths) {
+    // Add the base path if the URL is relative and we are in the browser
+    if (!/^(?:http:\/)?\//.test(val.value) && paths.length > 0 && typeof(window) !== 'undefined') {
+        val.value = [paths[0], val.value].join('/').replace('//', '/');
+    }
     this.value = val;
+    this.paths = paths;
 };
 tree.URL.prototype = {
     toCSS: function () {
         return "url(" + this.value.toCSS() + ")";
     },
-    eval: function () { return this }
+    eval: function (ctx) {
+        return new(tree.URL)(this.value.eval(ctx), this.paths);
+    }
 };
 
 })(require('less/tree'));
@@ -2062,7 +2197,9 @@ require('less/tree').find = function (obj, fun) {
 // browser.js - client-side engine
 //
 
-var isFileProtocol = location.protocol === 'file:';
+var isFileProtocol = (location.protocol === 'file:'    ||
+                      location.protocol === 'chrome:'  ||
+                      location.protocol === 'resource:');
 
 less.env = location.hostname == '127.0.0.1' ||
            location.hostname == '0.0.0.0'   ||
@@ -2107,24 +2244,33 @@ if (less.env === 'development') {
     less.optimization = 3;
 }
 
-var cache = (typeof(window.localStorage) === 'undefined') ? null : window.localStorage;
+var cache;
+
+try {
+    cache = (typeof(window.localStorage) === 'undefined') ? null : window.localStorage;
+} catch (_) {
+    cache = null;
+}
 
 //
 // Get all <link> tags with the 'rel' attribute set to "stylesheet/less"
 //
 var links = document.getElementsByTagName('link');
+var typePattern = /^text\/(x-)?less$/;
 
 less.sheets = [];
 
 for (var i = 0; i < links.length; i++) {
-    if (links[i].rel === 'stylesheet/less') {
+    if (links[i].rel === 'stylesheet/less' || (links[i].rel.match(/stylesheet/) &&
+       (links[i].type.match(typePattern)))) {
         less.sheets.push(links[i]);
     }
 }
 
-var startTime = endTime = new(Date);
 
 less.refresh = function (reload) {
+    var startTime = endTime = new(Date);
+
     loadStyleSheets(function (root, sheet, env) {
         if (env.local) {
             log("loading " + sheet.href + " from cache.");
@@ -2136,9 +2282,24 @@ less.refresh = function (reload) {
         (env.remaining === 0) && log("css generated in " + (new(Date) - startTime) + 'ms');
         endTime = new(Date);
     }, reload);
-};
 
-less.refresh();
+    loadStyles();
+};
+less.refreshStyles = loadStyles;
+
+less.refresh(less.env === 'development');
+
+function loadStyles() {
+    var styles = document.getElementsByTagName('style');
+    for (var i = 0; i < styles.length; i++) {
+        if (styles[i].type.match(typePattern)) {
+            new(less.Parser)().parse(styles[i].innerHTML || '', function (e, tree) {
+                styles[i].type      = 'text/css';
+                styles[i].innerHTML = tree.toCSS();
+            });
+        }
+    }
+}
 
 function loadStyleSheets(callback, reload) {
     for (var i = 0; i < less.sheets.length; i++) {
@@ -2168,7 +2329,7 @@ function loadStyleSheet(sheet, callback, reload, remaining) {
                 if (e) { return error(e, href) }
                 try {
                     callback(root, sheet, { local: false, lastModified: lastModified, remaining: remaining });
-                    removeNode(document.getElementById('less-error-message:' + href.replace(/[^a-z]+/gi, '-')));
+                    removeNode(document.getElementById('less-error-message:' + extractId(href)));
                 } catch (e) {
                     error(e, href);
                 }
@@ -2179,6 +2340,15 @@ function loadStyleSheet(sheet, callback, reload, remaining) {
     });
 }
 
+function extractId(href) {
+    return href.replace(/^[a-z]+:\/\/?[^\/]+/, '' )  // Remove protocol & domain
+               .replace(/^\//,                 '' )  // Remove root /
+               .replace(/\?.*$/,               '' )  // Remove query
+               .replace(/\.[^\.\/]+$/,         '' )  // Remove file extension
+               .replace(/[^\.\w-]+/g,          '-')  // Replace illegal characters
+               .replace(/\./g,                 ':'); // Replace dots with colons(for valid id)
+}
+
 function createCSS(styles, sheet, lastModified) {
     var css;
 
@@ -2186,13 +2356,13 @@ function createCSS(styles, sheet, lastModified) {
     var href = sheet.href ? sheet.href.replace(/\?.*$/, '') : '';
 
     // If there is no title set, use the filename, minus the extension
-    var id = 'less:' + (sheet.title || href.match(/(?:^|\/)([-\w]+)\.[a-z]+$/i)[1]);
+    var id = 'less:' + (sheet.title || extractId(href));
 
     // If the stylesheet doesn't exist, create a new node
     if ((css = document.getElementById(id)) === null) {
         css = document.createElement('style');
         css.type = 'text/css';
-        css.media = 'screen';
+        css.media = sheet.media;
         css.id = id;
         document.getElementsByTagName('head')[0].appendChild(css);
     }
@@ -2227,6 +2397,9 @@ function xhr(url, callback, errback) {
     var xhr = getXMLHttpRequest();
     var async = isFileProtocol ? false : less.async;
 
+    if (typeof(xhr.overrideMimeType) === 'function') {
+        xhr.overrideMimeType('text/css');
+    }
     xhr.open('GET', url, async);
     xhr.send(null);
 
@@ -2278,7 +2451,7 @@ function log(str) {
 }
 
 function error(e, href) {
-    var id = 'less-error-message:' + href.replace(/[^a-z]+/ig, '-');
+    var id = 'less-error-message:' + extractId(href);
 
     if (! e.extract) { throw e }
 
