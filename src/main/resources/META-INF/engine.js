@@ -28,14 +28,14 @@ window.less.tree.Import = function (path, imports) {
 
     // The '.less' extension is optional
     if (path instanceof window.less.tree.Quoted) {
-        this.path = /\.(le?|c)ss$/.test(path.content) ? path.content : path.content + '.less';
+        this.path = /\.(le?|c)ss$/.test(path.value) ? path.value : path.value + '.less';
     } else {
-        this.path = path.value.content || path.value;
+        this.path = path.value.value || path.value;
     }
 
     imports.push(this.path, function (root) {
         if (! root) {
-            throw new(Error)("Error parsing " + that.path);
+            throw new(Error)('Error parsing ' + that.path + '.');
         }
         that.root = root;
     });

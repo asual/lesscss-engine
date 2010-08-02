@@ -12,7 +12,7 @@
         <url>http://github.com/asual/lesscss-engine</url>
         <connection>scm:git:git://github.com/asual/lesscss-engine.git</connection>
     </scm>
-    <version>1.0.22</version>
+    <version>1.0.33</version>
     <description>A Java wrapper for LESS (http://lesscss.org). LESS extends CSS with: variables, mixins, operations and nested rules.</description>
     <url>http://www.asual.com/lesscss</url>
     <licenses>
@@ -31,17 +31,7 @@
         <dependency>
             <groupId>commons-logging</groupId>
             <artifactId>commons-logging</artifactId>
-            <version>1.1</version>
-        </dependency>
-        <dependency>
-            <groupId>commons-logging</groupId>
-            <artifactId>commons-logging-api</artifactId>
-            <version>1.1</version>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-simple</artifactId>
-            <version>1.5.11</version>
+            <version>1.1.1</version>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
