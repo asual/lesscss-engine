@@ -1,5 +1,5 @@
 /*
- * Copyright 2009 the original author or authors.
+ * Copyright 2009-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ public class LessEngine {
     
     public LessEngine() {
     	try {
-        	logger.info("Initializing LESS Engine");
+        	logger.info("Initializing LESS Engine.");
         	URL browser = getClass().getClassLoader().getResource("META-INF/browser.js");
         	URL less = getClass().getClassLoader().getResource("META-INF/less.js");
         	URL engine = getClass().getClassLoader().getResource("META-INF/engine.js");
@@ -59,7 +59,7 @@ public class LessEngine {
     		cf = (Function) scope.get("compileFile", scope);
     		Context.exit();
 		} catch (Exception e) {
-			logger.error("LESS Engine intialization failed", e);
+			logger.error("LESS Engine intialization failed.", e);
 		}
     }
     
