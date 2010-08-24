@@ -3,18 +3,21 @@
     xmlns="http://maven.apache.org/POM/4.0.0" 
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.asual.lesscss</groupId>
     <artifactId>lesscss-engine</artifactId>
     <packaging>jar</packaging>
     <name>LESS Engine</name>
+    <version>1.0.33</version>
+    <description>A Java wrapper for LESS (http://lesscss.org). LESS extends CSS with: variables, mixins, operations and nested rules.</description>
+    <url>http://www.asual.com/lesscss</url>
+    
     <scm>
         <url>http://github.com/asual/lesscss-engine</url>
         <connection>scm:git:git://github.com/asual/lesscss-engine.git</connection>
     </scm>
-    <version>1.0.33</version>
-    <description>A Java wrapper for LESS (http://lesscss.org). LESS extends CSS with: variables, mixins, operations and nested rules.</description>
-    <url>http://www.asual.com/lesscss</url>
+    
     <licenses>
         <license>
             <name>The Apache Software License, Version 2.0</name>
@@ -22,6 +25,20 @@
             <distribution>repo</distribution>
         </license>
     </licenses>
+    
+    <distributionManagement>
+        <repository>
+            <id>com.asual.repositories.releases</id>
+            <name>Asual Releases Repository</name>
+            <url>http://www.asual.com/nexus/content/repositories/releases</url>
+        </repository>
+    </distributionManagement>
+    
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+    </properties>
+    
     <dependencies>
         <dependency>
             <groupId>rhino</groupId>
@@ -40,6 +57,7 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+    
     <build>
         <plugins>
             <plugin>
@@ -92,7 +110,5 @@
             </testResource>
         </testResources>
     </build>
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    </properties>
+    
 </project>
