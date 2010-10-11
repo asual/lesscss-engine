@@ -15,15 +15,7 @@ var timers = [],
         },
         setInterval: function(fn, time) {
             var num = timers.length;
-            timers[num] = new java.lang.Thread(new java.lang.Runnable({
-                run: function() {
-                    while (true) {
-                        java.lang.Thread.currentThread().sleep(time);
-                        fn();
-                    }
-                }
-            }));
-            timers[num].start();
+            timers[num] = fn.call(this, null);
             return num;
         }
     },
