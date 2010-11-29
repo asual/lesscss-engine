@@ -33,14 +33,14 @@ window.less.tree.Import = function (path, imports) {
         this.path = path.value.value || path.value;
     }
 
+    // Pre-compile all files
     imports.push(this.path, function (root) {
         if (! root) {
-            throw new(Error)('Error parsing ' + that.path + '.');
+            throw new(Error)("Error parsing " + that.path);
         }
         that.root = root;
     });
 };
-
 for (var p in treeImport) {
     window.less.tree.Import[p] = treeImport[p]
 };
