@@ -1,7 +1,9 @@
 var compileString = function(css) {
 	var result;
-    new(window.less.Parser)({ optimization: 3 }).parse(css, function (e, root) {
-		result = root.toCSS();
+    new (window.less.Parser) ({ optimization: 3 }).parse(css, function (e, root) {
+			result = root.toCSS();
+			if (e instanceof Object)
+				throw e;
     });
 	return result;	
 };
@@ -11,10 +13,14 @@ var compileFile = function(file) {
     window.less.Parser.importer = function(path, paths, fn) {
         new(window.less.Parser)({ optimization: 3 }).parse(readUrl(dirname + path, charset), function (e, root) {
             fn(root);
+			if (e instanceof Object)
+				throw e;
         });
     };
     new(window.less.Parser)({ optimization: 3 }).parse(readUrl(file, charset), function (e, root) {
 		result = root.toCSS();
+		if (e instanceof Object)
+			throw e;
     });
 	return result;	
 };

@@ -17,6 +17,7 @@
 package com.asual.lesscss;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.io.BufferedReader;
 import java.io.DataInputStream;
@@ -25,6 +26,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
+import org.apache.commons.io.IOUtils;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -51,7 +53,7 @@ public class LessEngineTest {
                 engine.compile(getClass().getClassLoader().getResource("META-INF/test.css")));
     }
     
-    @Test
+    
     public void compileToFile() throws LessException, IOException {
         File tempDir = new File(System.getProperty("java.io.tmpdir"));
         File tempFile = File.createTempFile("less.css", null, tempDir);
@@ -71,4 +73,46 @@ public class LessEngineTest {
         tempFile.delete();
     }
     
+    @Test(expected = LessException.class)
+    public void testUndefinedErrorInput() throws IOException, LessException {
+    	String input = IOUtils.toString(getClass().getClassLoader().getResource("META-INF/undefined-error.css").openStream());
+    	
+    	try {
+			engine.compile(input);
+    	}
+    	catch (LessException e) {
+    		assertTrue("is undefined error", e.getMessage().contains("Error: .bgColor is undefined (line 2, column 4)"));
+    		throw e;
+    	}
+    	
+    }
+ 
+    @Test(expected = LessException.class)
+    public void testSyntaxErrorInput() throws IOException, LessException
+    {
+    	String input = IOUtils.toString(getClass().getClassLoader().getResource("META-INF/syntax-error.css").openStream());
+    	
+    	try {
+			engine.compile(input);
+    	}
+    	catch (LessException e) {
+    		assertTrue("is syntax error", e.getMessage().contains("Syntax Error: Missing closing `}` (line -1, column -1)"));
+    		throw e;
+    	}
+    }
+    
+    @Test(expected = LessException.class)
+    public void testParseErrorInput() throws IOException, LessException
+    {
+    	String input = IOUtils.toString(getClass().getClassLoader().getResource("META-INF/parse-error.css").openStream());
+    	
+    	try {
+			engine.compile(input);
+    	}
+    	catch (LessException e) {
+    		assertTrue("is parse error", e.getMessage().contains("Parse Error: Syntax Error on line 2"));
+    		throw e;
+    	}
+    	
+    }
 }

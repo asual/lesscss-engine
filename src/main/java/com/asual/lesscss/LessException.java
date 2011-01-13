@@ -16,6 +16,9 @@
 
 package com.asual.lesscss;
 
+import java.util.List;
+
+
 /**
  * @author Rostislav Hristov
  */
@@ -23,6 +26,27 @@ public class LessException extends Exception {
 
     private static final long serialVersionUID = 662552833197468936L;
 
+	private String errorType;
+	private String filename;
+	private int line;
+	private int column;
+	private List<String> extract;
+    
+	public static LessException fromLessJsError(String errorType, String message, String filename, int line, int column, List<String> extract) {
+		LessException le = new LessException(message);
+		if (errorType == null) {
+			le.errorType = "LESSJS Error";
+		}
+		else {
+			le.errorType = errorType;
+		}
+		le.filename = filename;
+		le.line = line;
+		le.column = column;
+		le.extract = extract;
+		return le;
+	}
+	
     public LessException() {
         super();
     }
@@ -38,5 +62,58 @@ public class LessException extends Exception {
     public LessException(Throwable e) {
         super(e);
     }
+    
+    @Override
+    public String getMessage()
+    {
+    	if (errorType != null) {
+    		String msg = String.format("%s: %s (line %s, column %s)", errorType, super.getMessage(), line, column);
+    		if (!(extract == null) && !extract.isEmpty())
+    		{
+    			msg += " near";
+    			for (String l : extract) {
+    				msg += "\n" + l;
+    			}
+    		}
+    		return msg;
+    	}
+    	
+    	return super.getMessage();
+    }
+
+    /**
+     * Type of error as reported by less.js
+     */
+	public String getErrorType() {
+		return errorType;
+	}
+
+	/**
+	 * Filename that error occured in as reported by less.js
+	 */
+	public String getFilename() {
+		return filename;
+	}
+
+	/**
+	 * Line number where error occurred as reported by less.js or -1 if unknown.
+	 */
+	public int getLine() {
+		return line;
+	}
+
+	/**
+	 * Column number where error occurred as reported by less.js or -1 if unknown.
+	 */
+	public int getColumn() {
+		return column;
+	}
+	
+	/**
+	 * Lines around error as reported by less.js
+	 */
+	public List<String> getExtract() {
+		return extract;
+	}
     
 }
