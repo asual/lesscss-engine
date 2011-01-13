@@ -53,7 +53,7 @@ public class LessEngineTest {
                 engine.compile(getClass().getClassLoader().getResource("META-INF/test.css")));
     }
     
-    
+    @Test
     public void compileToFile() throws LessException, IOException {
         File tempDir = new File(System.getProperty("java.io.tmpdir"));
         File tempFile = File.createTempFile("less.css", null, tempDir);
