@@ -25,6 +25,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.URL;
 
 import org.apache.commons.io.IOUtils;
 import org.junit.BeforeClass;
@@ -50,7 +51,7 @@ public class LessEngineTest {
     @Test
     public void compileToString() throws LessException, IOException {
         assertEquals("body {\n  color: #f0f0f0;\n}\n", 
-                engine.compile(getClass().getClassLoader().getResource("META-INF/test.css")));
+                engine.compile(loadResource("test.css")));
     }
     
     @Test
@@ -58,7 +59,7 @@ public class LessEngineTest {
         File tempDir = new File(System.getProperty("java.io.tmpdir"));
         File tempFile = File.createTempFile("less.css", null, tempDir);
         engine.compile(
-        		new File(getClass().getClassLoader().getResource("META-INF/test.css").getPath()), 
+        		new File(loadResource("test.css").getPath()),
         		new File(tempFile.getAbsolutePath()));
         FileInputStream fstream = new FileInputStream(tempFile.getAbsolutePath());
         DataInputStream in = new DataInputStream(fstream);
@@ -71,6 +72,33 @@ public class LessEngineTest {
         in.close();
         assertEquals("body {  color: #f0f0f0;}", sb.toString());
         tempFile.delete();
+    }
+
+    @Test
+    public void compileToStringForMultipleImports() throws LessException, IOException {
+        String expected = "body {\n" +
+                "  font-family: Arial, Helvetica;\n" +
+                "}\n" +
+                "body {\n" +
+                "  width: 960px;\n" +
+                "  margin: 0;\n" +
+                "}\n" +
+                "#header {\n" +
+                "  border-radius: 5px;\n" +
+                "  -webkit-border-radius: 5px;\n" +
+                "  -moz-border-radius: 5px;\n" +
+                "}\n" +
+                "#footer {\n" +
+                "  border-radius: 10px;\n" +
+                "  -webkit-border-radius: 10px;\n" +
+                "  -moz-border-radius: 10px;\n" +
+                "}\n";
+        String actual = engine.compile(loadResource("multiple-imports.css"));
+        assertEquals(expected, actual);
+    }
+
+    private URL loadResource(String filename) {
+        return getClass().getClassLoader().getResource("META-INF/" + filename);
     }
     
     @Test(expected = LessException.class)
