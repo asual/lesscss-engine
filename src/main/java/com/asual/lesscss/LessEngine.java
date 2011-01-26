@@ -82,7 +82,7 @@ public class LessEngine {
     public String compile(URL input) throws LessException {
     	try {
             long time = System.currentTimeMillis();
-            String result = call(cf, new Object[] {input.getProtocol() + ":" + input.getFile()});
+            String result = call(cf, new Object[] {input.getProtocol() + ":" + input.getFile(), getClass().getClassLoader()});
             logger.debug("The compilation of '" + input + "' took " + (System.currentTimeMillis () - time) + " ms.");
             return result;
 		} catch (Exception e) {
@@ -93,7 +93,7 @@ public class LessEngine {
     public String compile(File input) throws LessException {
     	try {
             long time = System.currentTimeMillis();
-            String result = call(cf, new Object[] {"file:" + input.getAbsolutePath()});
+            String result = call(cf, new Object[] {"file:" + input.getAbsolutePath(), getClass().getClassLoader()});
             logger.debug("The compilation of '" + input + "' took " + (System.currentTimeMillis () - time) + " ms.");
             return result;
 		} catch (Exception e) {

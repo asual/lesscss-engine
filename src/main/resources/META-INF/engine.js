@@ -8,10 +8,15 @@ var compileString = function(css) {
 	return result;	
 };
 
-var compileFile = function(file) {
-    var result, charset = 'UTF-8', dirname = file.replace(/\\/g, '/').replace(/[^\/]+$/, '');
+var compileFile = function(file, classLoader) {
+    var result, charset = 'UTF-8', cp = 'classpath:', dirname = file.replace(/\\/g, '/').replace(/[^\/]+$/, '');
     window.less.Parser.importer = function(path, paths, fn) {
-        new(window.less.Parser)({ optimization: 3 }).parse(readUrl(dirname + path, charset), function (e, root) {
+        if (path.indexOf(cp) == 0) {
+            path = classLoader.getResource(path.replace(cp, ''));
+        } else if (path.substr(0, 1) != '/') {
+            path = dirname + path;
+        }
+        new(window.less.Parser)({ optimization: 3 }).parse(readUrl(path, charset), function (e, root) {
             fn(root);
 			if (e instanceof Object)
 				throw e;
