@@ -1,11 +1,11 @@
 var compileString = function(css) {
-	var result;
+    var result;
     new (window.less.Parser) ({ optimization: 3 }).parse(css, function (e, root) {
-			result = root.toCSS();
-			if (e instanceof Object)
-				throw e;
+            result = root.toCSS();
+            if (e instanceof Object)
+                throw e;
     });
-	return result;	
+    return result;    
 };
 
 var compileFile = function(file, classLoader) {
@@ -18,16 +18,16 @@ var compileFile = function(file, classLoader) {
         }
         new(window.less.Parser)({ optimization: 3 }).parse(readUrl(path, charset), function (e, root) {
             fn(root);
-			if (e instanceof Object)
-				throw e;
+            if (e instanceof Object)
+                throw e;
         });
     };
     new(window.less.Parser)({ optimization: 3 }).parse(readUrl(file, charset), function (e, root) {
-		result = root.toCSS();
-		if (e instanceof Object)
-			throw e;
+        result = root.toCSS();
+        if (e instanceof Object)
+            throw e;
     });
-	return result;	
+    return result;
 };
 
 var treeImport = window.less.tree.Import;
