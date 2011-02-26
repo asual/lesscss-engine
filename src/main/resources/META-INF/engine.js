@@ -16,13 +16,13 @@ var compileFile = function(file, classLoader) {
         } else if (path.substr(0, 1) != '/') {
             path = dirname + path;
         }
-        new(window.less.Parser)({ optimization: 3 }).parse(readUrl(path, charset), function (e, root) {
+        new(window.less.Parser)({ optimization: 3 }).parse(readUrl(path, charset).replace(/\r/g, ''), function (e, root) {
             fn(root);
             if (e instanceof Object)
                 throw e;
         });
     };
-    new(window.less.Parser)({ optimization: 3 }).parse(readUrl(file, charset), function (e, root) {
+    new(window.less.Parser)({ optimization: 3 }).parse(readUrl(file, charset).replace(/\r/g, ''), function (e, root) {
         result = root.toCSS();
         if (e instanceof Object)
             throw e;
