@@ -9,7 +9,7 @@
     <artifactId>lesscss-engine</artifactId>
     <packaging>jar</packaging>
     <name>LESS Engine</name>
-    <version>1.1.42</version>
+    <version>1.0.43</version>
     <description>A Java wrapper for LESS (http://lesscss.org). LESS extends CSS with: variables, mixins, operations and nested rules.</description>
     <url>http://www.asual.com/lesscss</url>
     
