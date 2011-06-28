@@ -85,6 +85,7 @@ public class LessEngine {
 		try {
 			long time = System.currentTimeMillis();
             logger.debug("Compiling URL: " + input.getProtocol() + ":" + input.getFile());
+            logger.info(input.getProtocol() + ":" + input.getFile());
 			String result = call(cf, new Object[] {input.getProtocol() + ":" + input.getFile(), getClass().getClassLoader()});
 			logger.debug("The compilation of '" + input + "' took " + (System.currentTimeMillis () - time) + " ms.");
 			return result;
