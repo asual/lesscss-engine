@@ -5,7 +5,7 @@ var compileString = function(css) {
             if (e instanceof Object)
                 throw e;
     });
-    return result;    
+    return result;
 };
 
 var compileFile = function(file, classLoader) {
@@ -14,15 +14,15 @@ var compileFile = function(file, classLoader) {
         if (path.indexOf(cp) == 0) {
             path = classLoader.getResource(path.replace(cp, ''));
         } else if (path.substr(0, 1) != '/') {
-            path = dirname + path;
+            path = paths[0] + path;
         }
-        new(window.less.Parser)({ optimization: 3 }).parse(readUrl(path, charset).replace(/\r/g, ''), function (e, root) {
+        new(window.less.Parser)({ optimization: 3, paths: [String(path).replace(/[\w\.-]+$/, '')] }).parse(readUrl(path, charset).replace(/\r/g, ''), function (e, root) {
             fn(root);
             if (e instanceof Object)
                 throw e;
         });
     };
-    new(window.less.Parser)({ optimization: 3 }).parse(readUrl(file, charset).replace(/\r/g, ''), function (e, root) {
+    new(window.less.Parser)({ optimization: 3, paths: [file.replace(/[\w\.-]+$/, '')] }).parse(readUrl(file, charset).replace(/\r/g, ''), function (e, root) {
         result = root.toCSS();
         if (e instanceof Object)
             throw e;
