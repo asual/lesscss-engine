@@ -1,6 +1,4 @@
 /*
- * Copyright 2009-2010 the original author or authors.
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -54,7 +52,7 @@ public class LessEngine {
 			URL less = getClass().getClassLoader().getResource("META-INF/less.js");
 			URL engine = getClass().getClassLoader().getResource("META-INF/engine.js");
 			Context cx = Context.enter();
-            logger.warn("Using implementation version: " + cx.getImplementationVersion());
+			logger.warn("Using implementation version: " + cx.getImplementationVersion());
 			cx.setOptimizationLevel(9);
 			Global global = new Global();
 			global.init(cx);		  
@@ -84,8 +82,7 @@ public class LessEngine {
 	public String compile(URL input) throws LessException {
 		try {
 			long time = System.currentTimeMillis();
-            logger.debug("Compiling URL: " + input.getProtocol() + ":" + input.getFile());
-            logger.info(input.getProtocol() + ":" + input.getFile());
+			logger.debug("Compiling URL: " + input.getProtocol() + ":" + input.getFile());
 			String result = call(cf, new Object[] {input.getProtocol() + ":" + input.getFile(), getClass().getClassLoader()});
 			logger.debug("The compilation of '" + input + "' took " + (System.currentTimeMillis () - time) + " ms.");
 			return result;
@@ -97,7 +94,7 @@ public class LessEngine {
 	public String compile(File input) throws LessException {
 		try {
 			long time = System.currentTimeMillis();
-            logger.debug("Compiling File: " + "file:" + input.getAbsolutePath());
+			logger.debug("Compiling File: " + "file:" + input.getAbsolutePath());
 			String result = call(cf, new Object[] {"file:" + input.getAbsolutePath(), getClass().getClassLoader()});
 			logger.debug("The compilation of '" + input + "' took " + (System.currentTimeMillis () - time) + " ms.");
 			return result;
