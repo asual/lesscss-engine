@@ -1,4 +1,5 @@
 @import "classpath:META-INF/import.css";
+@import url('classpath:META-INF/import.css');
 
 body {
     color: @color;

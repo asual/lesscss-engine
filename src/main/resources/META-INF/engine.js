@@ -10,9 +10,10 @@ var compileString = function(css) {
 
 var compileFile = function(file, classLoader) {
     var result, charset = 'UTF-8', cp = 'classpath:', dirname = file.replace(/\\/g, '/').replace(/[^\/]+$/, '');
+
     window.less.Parser.importer = function(path, paths, fn) {
-        if (path.indexOf(cp) == 0) {
-            path = classLoader.getResource(path.replace(cp, ''));
+        if (path.indexOf(cp) != -1) {
+            path = classLoader.getResource(path.replace(new RegExp('^.*' + cp), ''));
         } else if (path.substr(0, 1) != '/') {
             path = paths[0] + path;
         }
