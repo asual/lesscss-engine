@@ -10,12 +10,11 @@ var compileString = function(css) {
 
 var compileFile = function(file, classLoader) {
     var result, charset = 'UTF-8', cp = 'classpath:', dirname = file.replace(/\\/g, '/').replace(/[^\/]+$/, '');
-
     window.less.Parser.importer = function(path, paths, fn) {
         if (path.indexOf(cp) != -1) {
             path = classLoader.getResource(path.replace(new RegExp('^.*' + cp), ''));
-        } else if (path.substr(0, 1) != '/') {
-            path = paths[0] + path;
+        } else if (!/^\//.test(path)) {
+            path = (paths[0] ? paths[0] : dirname) + path;
         }
         new(window.less.Parser)({ optimization: 3, paths: [String(path).replace(/[\w\.-]+$/, '')] }).parse(readUrl(path, charset).replace(/\r/g, ''), function (e, root) {
             fn(root);
@@ -23,7 +22,7 @@ var compileFile = function(file, classLoader) {
                 throw e;
         });
     };
-    new(window.less.Parser)({ optimization: 3, paths: [file.replace(/[\w\.-]+$/, '')] }).parse(readUrl(file, charset).replace(/\r/g, ''), function (e, root) {
+    new(window.less.Parser)({ optimization: 3 }).parse(readUrl(file, charset).replace(/\r/g, ''), function (e, root) {
         result = root.toCSS();
         if (e instanceof Object)
             throw e;
