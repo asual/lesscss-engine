@@ -1,5 +1,5 @@
 //
-// LESS - Leaner CSS v1.1.3
+// LESS - Leaner CSS v1.1.4
 // http://lesscss.org
 // 
 // Copyright (c) 2009-2011, Alexis Sellier
@@ -922,9 +922,13 @@ less.Parser = function Parser(env) {
                 var e, t, c;
 
                 c = $(this.combinator);
-                e = $(/^(?:[.#]?|:*)(?:[\w-]|\\(?:[a-fA-F0-9]{1,6} ?|[^a-fA-F0-9]))+/) || $('*') || $(this.attribute) || $(/^\([^)@]+\)/);
+                e = $(/^(?:[.#]?|:*)(?:[\w-]|\\(?:[a-fA-F0-9]{1,6} ?|[^a-fA-F0-9]))+/) || $('*') || $(this.attribute) || $(/^\([^)@]+\)/) || $(/^(?:\d*\.)?\d+%/);
 
                 if (e) { return new(tree.Element)(c, e) }
+
+                if (c.value && c.value[0] === '&') {
+                  return new(tree.Element)(c, null);
+                }
             },
 
             //
@@ -939,10 +943,18 @@ less.Parser = function Parser(env) {
             combinator: function () {
                 var match, c = input.charAt(i);
 
-                if (c === '>' || c === '&' || c === '+' || c === '~') {
+                if (c === '>' || c === '+' || c === '~') {
                     i++;
                     while (input.charAt(i) === ' ') { i++ }
                     return new(tree.Combinator)(c);
+                } else if (c === '&') {
+                    match = '&';
+                    i++;
+                    if(input.charAt(i) === ' ') {
+                        match = '& ';
+                    }
+                    while (input.charAt(i) === ' ') { i++ }
+                    return new(tree.Combinator)(match);
                 } else if (c === ':' && input.charAt(i + 1) === ':') {
                     i += 2;
                     while (input.charAt(i) === ' ') { i++ }
@@ -1012,7 +1024,7 @@ less.Parser = function Parser(env) {
                 var selectors = [], s, rules, match;
                 save();
 
-                if (match = /^([.#: \w-]+)[\s\n]*\{/.exec(chunks[j])) {
+                if (match = /^([.#:% \w-]+)[\s\n]*\{/.exec(chunks[j])) {
                     i += match[0].length - 1;
                     selectors = [new(tree.Selector)([new(tree.Element)(null, match[1])])];
                 } else {
@@ -1089,7 +1101,7 @@ less.Parser = function Parser(env) {
 
                 if (value = $(this['import'])) {
                     return value;
-                } else if (name = $(/^@media|@page|@-[-a-z]+/)) {
+                } else if (name = $(/^@media|@page/) || $(/^@(?:-webkit-)?keyframes/)) {
                     types = ($(/^[^{]+/) || '').trim();
                     if (rules = $(this.block)) {
                         return new(tree.Directive)(name + " " + types, rules);
@@ -1664,7 +1676,7 @@ tree.Directive.prototype = {
 tree.Element = function (combinator, value) {
     this.combinator = combinator instanceof tree.Combinator ?
                       combinator : new(tree.Combinator)(combinator);
-    this.value = value.trim();
+    this.value = value ? value.trim() : "";
 };
 tree.Element.prototype.toCSS = function (env) {
     return this.combinator.toCSS(env || {}) + this.value;
@@ -1673,6 +1685,8 @@ tree.Element.prototype.toCSS = function (env) {
 tree.Combinator = function (value) {
     if (value === ' ') {
         this.value = ' ';
+    } else if (value === '& ') {
+        this.value = '& ';
     } else {
         this.value = value ? value.trim() : "";
     }
@@ -1682,6 +1696,7 @@ tree.Combinator.prototype.toCSS = function (env) {
         ''  : '',
         ' ' : ' ',
         '&' : '',
+        '& ' : ' ',
         ':' : ' :',
         '::': '::',
         '+' : env.compress ? '+' : ' + ',
@@ -2178,11 +2193,7 @@ tree.Ruleset.prototype = {
             if (context.length === 0) {
                 paths = this.selectors.map(function (s) { return [s] });
             } else {
-                for (var s = 0; s < this.selectors.length; s++) {
-                    for (var c = 0; c < context.length; c++) {
-                        paths.push(context[c].concat([this.selectors[s]]));
-                    }
-                }
+                this.joinSelectors( paths, context, this.selectors );
             }
         }
 
@@ -2232,6 +2243,43 @@ tree.Ruleset.prototype = {
         css.push(rulesets);
 
         return css.join('') + (env.compress ? '\n' : '');
+    },
+
+    joinSelectors: function (paths, context, selectors) {
+        for (var s = 0; s < selectors.length; s++) {
+            this.joinSelector(paths, context, selectors[s]);
+        }
+    },
+
+    joinSelector: function (paths, context, selector) {
+        var before = [], after = [], beforeElements = [],
+            afterElements = [], hasParentSelector = false, el;
+
+        for (var i = 0; i < selector.elements.length; i++) {
+            el = selector.elements[i];
+            if (el.combinator.value[0] === '&') {
+                hasParentSelector = true;
+            }
+            if (hasParentSelector) afterElements.push(el);
+            else                   beforeElements.push(el);
+        }
+
+        if (! hasParentSelector) {
+            afterElements = beforeElements;
+            beforeElements = [];
+        }
+
+        if (beforeElements.length > 0) {
+            before.push(new(tree.Selector)(beforeElements));
+        }
+
+        if (afterElements.length > 0) {
+            after.push(new(tree.Selector)(afterElements));
+        }
+
+        for (var c = 0; c < context.length; c++) {
+            paths.push(before.concat(context[c]).concat(after));
+        }
     }
 };
 })(require('less/tree'));
