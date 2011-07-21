@@ -129,47 +129,47 @@ public class LessEngine {
 			
 			Scriptable value = (Scriptable) ((JavaScriptException) root).getValue();
 			
-			boolean hasName = ScriptableObject.hasProperty((Scriptable) value, "name");
-			boolean hasType = ScriptableObject.hasProperty((Scriptable) value, "type");
+			boolean hasName = ScriptableObject.hasProperty(value, "name");
+			boolean hasType = ScriptableObject.hasProperty(value, "type");
 			
 			if (hasName || hasType) {
 				String errorType = "Error";
 				
 				if (hasName) {
-					String type = (String) ScriptableObject.getProperty(((Scriptable) value), "name");
+					String type = (String) ScriptableObject.getProperty(value, "name");
 					if ("ParseError".equals(type)) {
 						errorType = "Parse Error";
 					} else {
 						errorType = type + " Error";
 					}
 				} else if (hasType) {
-					Object prop = ScriptableObject.getProperty(((Scriptable) value), "type");
+					Object prop = ScriptableObject.getProperty(value, "type");
 					if (prop instanceof String) {
 						errorType = (String) prop + " Error"; 
 					}
 				}
 				
-				String message = (String) ScriptableObject.getProperty(((Scriptable) value), "message");
+				String message = (String) ScriptableObject.getProperty(value, "message");
 				
 				String filename = "";
 				if (ScriptableObject.hasProperty(value, "filename")) {
-					filename = (String) ScriptableObject.getProperty(((Scriptable) value), "filename"); 
+					filename = (String) ScriptableObject.getProperty(value, "filename"); 
 				}
 				
 				int line = -1;
 				if (ScriptableObject.hasProperty(value, "line")) {
-					line = ((Double) ScriptableObject.getProperty(((Scriptable) value), "line")).intValue(); 
+					line = ((Double) ScriptableObject.getProperty(value, "line")).intValue(); 
 				}
 				
 				int column = -1;
 				if (ScriptableObject.hasProperty(value, "column")) {
-					column = ((Double) ScriptableObject.getProperty(((Scriptable) value), "column")).intValue();
+					column = ((Double) ScriptableObject.getProperty(value, "column")).intValue();
 				}
 				
 				
 				List<String> extractList = new ArrayList<String>();
 				if (ScriptableObject.hasProperty(value, "extract")) {
-					NativeArray extract = (NativeArray) ScriptableObject.getProperty(((Scriptable) value), "extract");
+					NativeArray extract = (NativeArray) ScriptableObject.getProperty(value, "extract");
 					for (int i = 0; i < extract.getLength(); i++) {
 						if (extract.get(i, extract) instanceof String) {
 							extractList.add(((String) extract.get(i, extract)).replace("\t", " "));
