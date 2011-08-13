@@ -139,6 +139,14 @@ public class LessEngineTest {
 			throw e;
 		}
 	}
+	
+	
+	@Test
+	public void testImportWithUrl() throws LessException {
+	    String expected = "a {\n  color: #dddddd;\n  background-image: url(img/logo.png);\n}\n";
+	    String result = engine.compile(getResource("less/import-from-subdir.less"));
+	    assertEquals(expected, result);
+	}
 
 	private URL getResource(String path) {
 		return getClass().getClassLoader().getResource("META-INF/" + path);
