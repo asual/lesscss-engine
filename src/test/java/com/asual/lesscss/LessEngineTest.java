@@ -140,7 +140,6 @@ public class LessEngineTest {
 		}
 	}
 	
-	
 	@Test
 	public void testImportWithUrl() throws LessException {
 	    String expected = "a {\n  color: #dddddd;\n  background-image: url(img/logo.png);\n}\n";
