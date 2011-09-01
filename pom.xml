@@ -109,7 +109,7 @@
 							</descriptorRefs>
 							<archive>
 								<manifest>
-									<mainClass>com.asual.lesscss.RunLess</mainClass>
+									<mainClass>com.asual.lesscss.LessEngine</mainClass>
 								</manifest>
 							</archive>
 						</configuration>
