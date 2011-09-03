@@ -36,20 +36,9 @@ import org.mozilla.javascript.tools.shell.Global;
 /**
  * @author Rostislav Hristov
  * @author Uriah Carpenter
+ * @author Noah Sloan
  */
 public class LessEngine {
-
-	public static void main(String[] args) throws LessException, IOException {
-		LessEngine engine = new LessEngine();
-		
-		if(args.length  == 1) {
-			System.out.println(engine.compile(args[0]));
-		} else if(args.length  == 2) {
-			engine.compile(new File(args[0]),new File(args[1]));
-		} else {
-			System.err.println("Usage: java -jar lesscss-engine.jar <input_file> [<output_file>]");
-		}
-	}
 	
 	private final Log logger = LogFactory.getLog(getClass());
 
@@ -58,11 +47,14 @@ public class LessEngine {
 	private Function cf;
 	
 	public LessEngine() {
+		this(LessEngine.class.getClassLoader().getResource("META-INF/less.js"));
+	}
+	
+	public LessEngine(URL less) {
 		try {
 			logger.debug("Initializing LESS Engine.");
-			URL browser = getClass().getClassLoader().getResource("META-INF/browser.js");
-			URL less = getClass().getClassLoader().getResource("META-INF/less.js");
-			URL engine = getClass().getClassLoader().getResource("META-INF/engine.js");
+			URL browser = LessEngine.class.getClassLoader().getResource("META-INF/browser.js");
+			URL engine = LessEngine.class.getClassLoader().getResource("META-INF/engine.js");
 			Context cx = Context.enter();
 			logger.warn("Using implementation version: " + cx.getImplementationVersion());
 			cx.setOptimizationLevel(9);
@@ -195,5 +187,18 @@ public class LessEngine {
 		
 		throw new LessException(root);
 	}
+	
+	public static void main(String[] args) throws LessException, IOException {
+		
+		LessEngine engine = new LessEngine();
+		
+		if (args.length == 1) {
+			System.out.println(engine.compile(args[0]));
+		} else if (args.length == 2) {
+			engine.compile(new File(args[0]),new File(args[1]));
+		} else {
+			System.err.println("Usage: java -jar lesscss-engine.jar <input_file> [<output_file>]");
+		}
+	}	
 	
 }
