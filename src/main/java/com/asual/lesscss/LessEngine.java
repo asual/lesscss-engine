@@ -14,11 +14,13 @@
 
 package com.asual.lesscss;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.StringWriter;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -69,7 +71,7 @@ public class LessEngine {
 			logger.debug("Using implementation version: " + cx.getImplementationVersion());
 			cx.setOptimizationLevel(9);
 			Global global = new Global();
-			global.init(cx);		  
+			global.init(cx);
 			scope = cx.initStandardObjects(global);
 			cx.evaluateReader(scope, new InputStreamReader(env.openConnection().getInputStream()), env.getFile(), 1, null);
 			cx.evaluateString(scope, "lessenv.charset = '" + options.getCharset() + "';", "charset", 1, null);
@@ -206,13 +208,27 @@ public class LessEngine {
 			}
 			LessEngine engine = new LessEngine(options);
 			String[] files = cmdLine.getArgs();
+			BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+			StringWriter sw = new StringWriter();
+			char[] buffer = new char[1024];
+			int n = 0;
+			while (-1 != (n = in.read(buffer))) {
+				sw.write(buffer, 0, n);
+			}
+			String src = sw.toString();
+			if (!src.isEmpty()) {
+				System.out.println(engine.compile(src));
+				System.exit(0);
+			}
 			if (files.length == 1) {
 				System.out.println(engine.compile(new File(files[0])));
 				System.exit(0);
-			} else if (files.length == 2) {
+			}
+			if (files.length == 2) {
 				engine.compile(new File(files[0]), new File(files[1]));
 				System.exit(0);
 			}
+			
 		} catch (IOException ioe) {
 			System.err.println("Error opening input file.");
 		} catch (ParseException pe) {
