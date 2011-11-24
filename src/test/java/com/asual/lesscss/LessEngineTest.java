@@ -39,7 +39,9 @@ public class LessEngineTest {
 
 	@BeforeClass
 	public static void before() {
-		engine = new LessEngine();
+		LessOptions options = new LessOptions();
+		options.setCss(true);
+		engine = new LessEngine(options);
 	}
 
 	@Test
@@ -50,15 +52,15 @@ public class LessEngineTest {
 	@Test
 	public void compileToString() throws LessException, IOException {
 		assertEquals("body {\n  color: #f0f0f0;\n}\n",
-				engine.compile(getResource("css/classpath.css")));
+				engine.compile(getResource("less/classpath.less")));
 	}
 
 	@Test
 	public void compileToFile() throws LessException, IOException {
 		File tempDir = new File(System.getProperty("java.io.tmpdir"));
-		File tempFile = File.createTempFile("classpath.css", null, tempDir);
+		File tempFile = File.createTempFile("classpath.less", null, tempDir);
 		engine.compile(
-				new File(getResource("css/classpath.css").getPath()),
+				new File(getResource("less/classpath.less").getPath()),
 				new File(tempFile.getAbsolutePath()));
 		FileInputStream fstream = new FileInputStream(tempFile.getAbsolutePath());
 		DataInputStream in = new DataInputStream(fstream);
@@ -100,7 +102,7 @@ public class LessEngineTest {
 		String expected = ".logo {\n" + 
 			"  background-image: url(../img/logo.png);\n" + 
 			"}\n";
-		assertEquals(expected, engine.compile(getResource("css/img.css")));
+		assertEquals(expected, engine.compile(getResource("less/img.less")));
 	}
 	
 	@Test
@@ -113,7 +115,7 @@ public class LessEngineTest {
 	@Test(expected = LessException.class)
 	public void testUndefinedErrorInput() throws IOException, LessException {
 		try {
-			engine.compile(getResource("css/undefined-error.css"));
+			engine.compile(getResource("less/undefined-error.less"));
 		} catch (LessException e) {
 			assertTrue("is undefined error", e.getMessage().contains("Error: .bgColor is undefined (line 2, column 4)"));
 			throw e;
@@ -123,7 +125,7 @@ public class LessEngineTest {
 	@Test(expected = LessException.class)
 	public void testSyntaxErrorInput() throws IOException, LessException {
 		try {
-			engine.compile(getResource("css/syntax-error.css"));
+			engine.compile(getResource("less/syntax-error.less"));
 		} catch (LessException e) {
 			assertTrue("is syntax error", e.getMessage().contains("Syntax Error: Missing closing `}` (line -1, column -1)"));
 			throw e;
@@ -133,7 +135,7 @@ public class LessEngineTest {
 	@Test(expected = LessException.class)
 	public void testParseErrorInput() throws IOException, LessException {
 		try {
-			engine.compile(getResource("css/parse-error.css"));
+			engine.compile(getResource("less/parse-error.less"));
 		} catch (LessException e) {
 			assertTrue("is parse error", e.getMessage().contains("Parse Error: Syntax Error on line 2"));
 			throw e;
