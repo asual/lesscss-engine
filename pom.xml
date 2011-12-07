@@ -9,14 +9,13 @@
 	<artifactId>lesscss-engine</artifactId>
 	<packaging>jar</packaging>
 	<name>LESS Engine</name>
-	<version>1.1.5</version>
+	<version>1.1.5-SNAPSHOT</version>
 	<description>A Java wrapper for LESS (http://lesscss.org). LESS extends CSS with: variables, mixins, operations and nested rules.</description>
 	<url>http://www.asual.com/lesscss</url>
 	
-	<scm>
-		<url>http://github.com/asual/lesscss-engine</url>
-		<connection>scm:git:git://github.com/asual/lesscss-engine.git</connection>
-	</scm>
+	<organization>
+		<name>Asual DZZD</name>
+	</organization>
 	
 	<licenses>
 		<license>
@@ -26,12 +25,23 @@
 		</license>
 	</licenses>
 	
+	<scm>
+		<url>http://github.com:asual/lesscss-engine</url>
+		<connection>scm:git:git://github.com:asual/lesscss-engine.git</connection>
+		<developerConnection>scm:git:git@github.com:asual/lesscss-engine.git</developerConnection>
+	</scm>
+	
 	<distributionManagement>
 		<repository>
 			<id>com.asual.repositories.releases</id>
 			<name>Asual Releases Repository</name>
 			<url>http://www.asual.com/maven/content/repositories/releases</url>
 		</repository>
+		<snapshotRepository>
+			<id>com.asual.repositories.snapshots</id>
+			<name>Asual Snapshots Repository</name>
+			<url>http://www.asual.com/maven/content/repositories/snapshots</url>		
+		</snapshotRepository>
 	</distributionManagement>
 	
 	<properties>
@@ -65,6 +75,16 @@
 	</dependencies>
 	
 	<build>
+		<testResources>
+			<testResource>
+				<directory>src/test/resources</directory>
+				<includes>
+					<include>log4j.xml</include>
+					<include>**/*.css</include>
+					<include>**/*.less</include>
+				</includes>
+			</testResource>
+		</testResources>
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -130,17 +150,16 @@
 				<artifactId>maven-install-plugin</artifactId>
 				<version>2.2</version>
 			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-release-plugin</artifactId>
+				<version>2.2.1</version>
+				<configuration>
+					<scmCommentPrefix></scmCommentPrefix>
+					<dryRun>true</dryRun>
+				</configuration>
+			</plugin>
 		</plugins>
-		<testResources>
-			<testResource>
-				<directory>src/test/resources</directory>
-				<includes>
-					<include>log4j.xml</include>
-					<include>**/*.css</include>
-					<include>**/*.less</include>
-				</includes>
-			</testResource>
-		</testResources>
 	</build>
 	
 </project>
