@@ -26,7 +26,7 @@
 	</licenses>
 	
 	<scm>
-		<url>http://github.com:asual/lesscss-engine</url>
+		<url>http://github.com/asual/lesscss-engine</url>
 		<connection>scm:git:git://github.com:asual/lesscss-engine.git</connection>
 		<developerConnection>scm:git:git@github.com:asual/lesscss-engine.git</developerConnection>
 	</scm>
@@ -155,9 +155,7 @@
 				<artifactId>maven-release-plugin</artifactId>
 				<version>2.2.1</version>
 				<configuration>
-					<scmCommentPrefix>a</scmCommentPrefix>
-					<scmReleaseLabel>b</scmReleaseLabel>
-					<dryRun>true</dryRun>
+					<scmCommentPrefix>Fix version and </scmCommentPrefix>
 				</configuration>
 			</plugin>
 		</plugins>
