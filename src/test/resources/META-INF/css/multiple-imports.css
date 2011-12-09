@@ -1,6 +1,6 @@
 @import "library.css";
 @import "fonts.css";
-@import "layout.css";
+@import url('classpath:META-INF/css/layout.css');
 
 #header {
   .rounded-corners;
