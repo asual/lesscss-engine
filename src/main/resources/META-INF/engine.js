@@ -29,7 +29,12 @@ var compileFile = function(file, classLoader) {
 	var result, cp = 'classpath:';
 	less.Parser.importer = function(path, paths, fn) {
 		if (path.indexOf(cp) != -1) {
-			path = classLoader.getResource(path.replace(new RegExp('^.*' + cp), ''));
+			var resource = classLoader.getResource(path.replace(new RegExp('^.*' + cp), ''));
+			if (lessenv.css && resource === null) {
+				path = classLoader.getResource(path.replace(new RegExp('^.*' + cp), '').replace(/\.less$/, '.css'));
+			} else {
+				path = resource;
+			}
 		} else if (!/^\//.test(path)) {
 			path = paths[0] + path;
 		}
