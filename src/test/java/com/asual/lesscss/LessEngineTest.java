@@ -45,8 +45,15 @@ public class LessEngineTest {
 	}
 
 	@Test
-	public void parse() throws LessException {
+	public void compileString() throws LessException {
 		assertEquals("div {\n  width: 2;\n}\n", engine.compile("div { width: 1 + 1 }"));
+	}
+
+	@Test
+	public void compileStringWithImport() throws LessException {
+		String path = getResource("less/import.less").getPath();
+		assertEquals("body {\n  color: #f0f0f0;\n}\n", 
+				engine.compile("@import url('" + path + "'); body { color: @color; }"));
 	}
 
 	@Test
