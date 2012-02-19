@@ -85,7 +85,7 @@ public class LessEngineTest {
 	@Test
 	public void compileToStringForMultipleImports() throws LessException, IOException {
 		String expected = "body {\n" +
-				"  font-family: Arial, Helvetica;\n" +
+				"  font-family: 'Arial', 'Helvetica';\n" +
 				"}\n" +
 				"body {\n" +
 				"  width: 960px;\n" +

@@ -6,6 +6,9 @@ delete arguments;
 if (lessenv.css) {
 	readUrl = function(url, charset) {
 		var content;
+		if (!/^\w+:/.test(url)) {
+			url = 'file:' + url;
+		}
 		try {
 			content = lessenv.readUrl.apply(this, arguments);
 		} catch (e) {
@@ -17,6 +20,18 @@ if (lessenv.css) {
 
 var compileString = function(css) {
 	var result;
+	less.Parser.importer = function(path, paths, fn) {
+		if (!/^\//.test(path)) {
+			path = paths[0] + path;
+		}
+		if (path != null) {
+			new(less.Parser)({ optimization: 3, paths: [String(path).replace(/[\w\.-]+$/, '')] }).parse(readUrl(path, lessenv.charset).replace(/\r/g, ''), function (e, root) {
+				fn(e, root);
+				if (e instanceof Object)
+					throw e;
+			});
+		}
+	};
 	new (less.Parser) ({ optimization: 3 }).parse(css, function (e, root) {
 		result = root.toCSS();
 		if (e instanceof Object)
@@ -40,7 +55,7 @@ var compileFile = function(file, classLoader) {
 		}
 		if (path != null) {
 			new(less.Parser)({ optimization: 3, paths: [String(path).replace(/[\w\.-]+$/, '')] }).parse(readUrl(path, lessenv.charset).replace(/\r/g, ''), function (e, root) {
-				fn(root);
+				fn(e, root);
 				if (e instanceof Object)
 					throw e;
 			});
