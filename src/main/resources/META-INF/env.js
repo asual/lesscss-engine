@@ -4,7 +4,8 @@ var lessenv = {
 		readFile: readFile,
 		readUrl: readUrl
 	},
-	arguments = [''];
+	arguments = [''],
+	exports = {};
 
 print = function() {};
 quit = function() {};

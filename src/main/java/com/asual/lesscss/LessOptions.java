@@ -22,10 +22,12 @@ import java.net.URL;
 public class LessOptions {
 	
 	public static final String CHARSET_OPTION = "charset";
+	public static final String COMPRESS_OPTION = "compress";
 	public static final String CSS_OPTION = "css";
 	public static final String LESS_OPTION = "less";
 
 	private String charset;
+	private boolean compress;
 	private boolean css;
 	private URL less;
 	
@@ -59,4 +61,11 @@ public class LessOptions {
 		this.css = css;
 	}
 	
+	public boolean isCompress() {
+		return compress;
+	}
+	
+	public void setCompress(boolean compress) {
+		this.compress = compress;
+	}
 }

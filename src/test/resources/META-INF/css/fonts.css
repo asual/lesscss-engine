@@ -1,4 +1,4 @@
-@font-families: 'Arial', 'Helvetica';
+@font-families: 'Helvetica Neue', Arial, sans-serif;
 
 body {
     font-family: @font-families;

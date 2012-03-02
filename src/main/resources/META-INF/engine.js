@@ -18,7 +18,7 @@ if (lessenv.css) {
 	};
 }
 
-var compileString = function(css) {
+var compileString = function(css, compress) {
 	var result;
 	less.Parser.importer = function(path, paths, fn) {
 		if (!/^\//.test(path)) {
@@ -34,13 +34,15 @@ var compileString = function(css) {
 	};
 	new (less.Parser) ({ optimization: 3 }).parse(css, function (e, root) {
 		result = root.toCSS();
+		if (compress)
+			result = exports.compressor.cssmin(result);
 		if (e instanceof Object)
 			throw e;
 	});
 	return result;
 };
 
-var compileFile = function(file, classLoader) {
+var compileFile = function(file, classLoader, compress) {
 	var result, cp = 'classpath:';
 	less.Parser.importer = function(path, paths, fn) {
 		if (path.indexOf(cp) != -1) {
@@ -63,6 +65,8 @@ var compileFile = function(file, classLoader) {
 	};
 	new(less.Parser)({ optimization: 3, paths: [file.replace(/[\w\.-]+$/, '')] }).parse(readUrl(file, lessenv.charset).replace(/\r/g, ''), function (e, root) {
 		result = root.toCSS();
+		if (compress)
+			result = exports.compressor.cssmin(result);
 		if (e instanceof Object)
 			throw e;
 	});

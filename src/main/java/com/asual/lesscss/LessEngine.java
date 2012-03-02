@@ -14,24 +14,16 @@
 
 package com.asual.lesscss;
 
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.StringWriter;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.GnuParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.mozilla.javascript.Context;
@@ -67,6 +59,7 @@ public class LessEngine {
 			URL less = options.getLess();
 			URL env = classLoader.getResource("META-INF/env.js");
 			URL engine = classLoader.getResource("META-INF/engine.js");
+			URL cssmin = classLoader.getResource("META-INF/cssmin.js");
 			Context cx = Context.enter();
 			logger.debug("Using implementation version: " + cx.getImplementationVersion());
 			cx.setOptimizationLevel(9);
@@ -77,6 +70,7 @@ public class LessEngine {
 			cx.evaluateString(scope, "lessenv.charset = '" + options.getCharset() + "';", "charset", 1, null);
 			cx.evaluateString(scope, "lessenv.css = " + options.isCss() + ";", "css", 1, null);
 			cx.evaluateReader(scope, new InputStreamReader(less.openConnection().getInputStream()), less.getFile(), 1, null);
+			cx.evaluateReader(scope, new InputStreamReader(cssmin.openConnection().getInputStream()), cssmin.getFile(), 1, null);
 			cx.evaluateReader(scope, new InputStreamReader(engine.openConnection().getInputStream()), engine.getFile(), 1, null);
 			compileString = (Function) scope.get("compileString", scope);
 			compileFile = (Function) scope.get("compileFile", scope);
@@ -87,9 +81,13 @@ public class LessEngine {
 	}
 	
 	public String compile(String input) throws LessException {
+		return compile(input, false);
+	}
+	
+	public String compile(String input, boolean compress) throws LessException {
 		try {
 			long time = System.currentTimeMillis();
-			String result = call(compileString, new Object[] {input});
+			String result = call(compileString, new Object[] {input, compress});
 			logger.debug("The compilation of '" + input + "' took " + (System.currentTimeMillis () - time) + " ms.");
 			return result;
 		} catch (Exception e) {
@@ -98,10 +96,14 @@ public class LessEngine {
 	}
 	
 	public String compile(URL input) throws LessException {
+		return compile(input, false);
+	}
+	
+	public String compile(URL input, boolean compress) throws LessException {
 		try {
 			long time = System.currentTimeMillis();
 			logger.debug("Compiling URL: " + input.getProtocol() + ":" + input.getFile());
-			String result = call(compileFile, new Object[] {input.getProtocol() + ":" + input.getFile(), classLoader});
+			String result = call(compileFile, new Object[] {input.getProtocol() + ":" + input.getFile(), classLoader, compress});
 			logger.debug("The compilation of '" + input + "' took " + (System.currentTimeMillis () - time) + " ms.");
 			return result;
 		} catch (Exception e) {
@@ -110,10 +112,14 @@ public class LessEngine {
 	}
 	
 	public String compile(File input) throws LessException {
+		return compile(input, false);
+	}
+	
+	public String compile(File input, boolean compress) throws LessException {
 		try {
 			long time = System.currentTimeMillis();
 			logger.debug("Compiling File: " + "file:" + input.getAbsolutePath());
-			String result = call(compileFile, new Object[] {"file:" + input.getAbsolutePath(), classLoader});
+			String result = call(compileFile, new Object[] {"file:" + input.getAbsolutePath(), classLoader, compress});
 			logger.debug("The compilation of '" + input + "' took " + (System.currentTimeMillis () - time) + " ms.");
 			return result;
 		} catch (Exception e) {
@@ -122,8 +128,12 @@ public class LessEngine {
 	}
 	
 	public void compile(File input, File output) throws LessException, IOException {
+		compile(input, output, false);
+	}
+	
+	public void compile(File input, File output, boolean compress) throws LessException, IOException {
 		try {
-			String content = compile(input);
+			String content = compile(input, compress);
 			if (!output.exists()) {
 				output.createNewFile();
 			}
@@ -189,55 +199,7 @@ public class LessEngine {
 	}
 	
 	public static void main(String[] args) throws LessException, URISyntaxException {
-		Options cmdOptions = new Options();
-		cmdOptions.addOption(LessOptions.CHARSET_OPTION, true, "Input file charset encoding. Defaults to UTF-8.");
-		cmdOptions.addOption(LessOptions.CSS_OPTION, false, "Flag that enables compilation of .css files.");
-		cmdOptions.addOption(LessOptions.LESS_OPTION, true, "Path to a custom less.js for Rhino version.");
-		try {
-			CommandLineParser cmdParser = new GnuParser();
-			CommandLine cmdLine = cmdParser.parse(cmdOptions, args);
-			LessOptions options = new LessOptions();
-			if (cmdLine.hasOption(LessOptions.CHARSET_OPTION)) {
-				options.setCharset(cmdLine.getOptionValue(LessOptions.CHARSET_OPTION));
-			}
-			if (cmdLine.hasOption(LessOptions.CSS_OPTION)) {
-				options.setCss(true);
-			}
-			if (cmdLine.hasOption(LessOptions.LESS_OPTION)) {
-				options.setLess(new File(cmdLine.getOptionValue(LessOptions.LESS_OPTION)).toURI().toURL());
-			}
-			LessEngine engine = new LessEngine(options);
-			String[] files = cmdLine.getArgs();
-			BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
-			StringWriter sw = new StringWriter();
-			char[] buffer = new char[1024];
-			int n = 0;
-			while (-1 != (n = in.read(buffer))) {
-				sw.write(buffer, 0, n);
-			}
-			String src = sw.toString();
-			if (!src.isEmpty()) {
-				System.out.println(engine.compile(src));
-				System.exit(0);
-			}
-			if (files.length == 1) {
-				System.out.println(engine.compile(new File(files[0])));
-				System.exit(0);
-			}
-			if (files.length == 2) {
-				engine.compile(new File(files[0]), new File(files[1]));
-				System.exit(0);
-			}
-			
-		} catch (IOException ioe) {
-			System.err.println("Error opening input file.");
-		} catch (ParseException pe) {
-			System.err.println("Error parsing arguments.");
-		}
-		String[] paths = LessEngine.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath().split(File.separator);
-		HelpFormatter formatter = new HelpFormatter();
-		formatter.printHelp("java -jar " + paths[paths.length - 1] + " input [output] [options]", cmdOptions);
-		System.exit(1);
+		new LessCommandLine(args);
 	}
 	
 }

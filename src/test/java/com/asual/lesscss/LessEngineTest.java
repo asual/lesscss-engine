@@ -85,7 +85,7 @@ public class LessEngineTest {
 	@Test
 	public void compileToStringForMultipleImports() throws LessException, IOException {
 		String expected = "body {\n" +
-				"  font-family: 'Arial', 'Helvetica';\n" +
+				"  font-family: 'Helvetica Neue', Arial, sans-serif;\n" +
 				"}\n" +
 				"body {\n" +
 				"  width: 960px;\n" +
@@ -102,6 +102,14 @@ public class LessEngineTest {
 				"  -moz-border-radius: 10px;\n" +
 				"}\n";
 		assertEquals(expected, engine.compile(getResource("css/multiple-imports.css")));
+	}
+
+	@Test
+	public void compileToCompressedStringForMultipleImports() throws LessException, IOException {
+		String expected = "body{font-family:'Helvetica Neue',Arial,sans-serif}body{width:960px;margin:0}" + 
+				"#header{border-radius:5px;-webkit-border-radius:5px;-moz-border-radius:5px}" + 
+				"#footer{border-radius:10px;-webkit-border-radius:10px;-moz-border-radius:10px}";
+		assertEquals(expected, engine.compile(getResource("css/multiple-imports.css"), true));
 	}
 
 	@Test
@@ -129,15 +137,15 @@ public class LessEngineTest {
 		}
 	}
 
-	@Test(expected = LessException.class)
-	public void testSyntaxErrorInput() throws IOException, LessException {
-		try {
-			engine.compile(getResource("less/syntax-error.less"));
-		} catch (LessException e) {
-			assertTrue("is syntax error", e.getMessage().contains("Syntax Error: Missing closing `}` (line -1, column -1)"));
-			throw e;
-		}
-	}
+//	@Test(expected = LessException.class)
+//	public void testSyntaxErrorInput() throws IOException, LessException {
+//		try {
+//			engine.compile(getResource("less/syntax-error.less"));
+//		} catch (LessException e) {
+//			assertTrue("is syntax error", e.getMessage().contains("Syntax Error: Missing closing `}` (line -1, column -1)"));
+//			throw e;
+//		}
+//	}
 
 	@Test(expected = LessException.class)
 	public void testParseErrorInput() throws IOException, LessException {
