@@ -1072,6 +1072,12 @@ less.Parser = function Parser(env) {
             selector: function () {
                 var sel, e, elements = [], c, match;
 
+                if ($('(')) {
+                    sel = $(this.entity);
+                    expect(')');
+                    return new(tree.Selector)([new(tree.Element)('', sel, i)]);
+                }
+
                 while (e = $(this.element)) {
                     c = input.charAt(i);
                     elements.push(e)
@@ -1182,7 +1188,7 @@ less.Parser = function Parser(env) {
             },
 
             mediaFeature: function () {
-                var e, nodes = [];
+                var e, p, nodes = [];
 
                 do {
                     if (e = $(this.entities.keyword)) {
@@ -1224,7 +1230,7 @@ less.Parser = function Parser(env) {
             },
 
             media: function () {
-                var features;
+                var features, rules;
 
                 if ($(/^@media/)) {
                     features = $(this.mediaFeatures);
