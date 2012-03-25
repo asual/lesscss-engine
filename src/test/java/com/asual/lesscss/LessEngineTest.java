@@ -128,31 +128,21 @@ public class LessEngineTest {
 	}
 
 	@Test(expected = LessException.class)
-	public void testUndefinedErrorInput() throws IOException, LessException {
+	public void testNameErrorInput() throws IOException, LessException {
 		try {
-			engine.compile(getResource("less/undefined-error.less"));
+			engine.compile(getResource("less/name-error.less"));
 		} catch (LessException e) {
-			assertTrue("is undefined error", e.getMessage().contains("Error: .bgColor is undefined (line 2, column 4)"));
+			assertTrue("Name Error", e.getMessage().contains("Name Error: .bgColor is undefined (line 2, column 4)"));
 			throw e;
 		}
 	}
-
-//	@Test(expected = LessException.class)
-//	public void testSyntaxErrorInput() throws IOException, LessException {
-//		try {
-//			engine.compile(getResource("less/syntax-error.less"));
-//		} catch (LessException e) {
-//			assertTrue("is syntax error", e.getMessage().contains("Syntax Error: Missing closing `}` (line -1, column -1)"));
-//			throw e;
-//		}
-//	}
 
 	@Test(expected = LessException.class)
 	public void testParseErrorInput() throws IOException, LessException {
 		try {
 			engine.compile(getResource("less/parse-error.less"));
 		} catch (LessException e) {
-			assertTrue("is parse error", e.getMessage().contains("Parse Error: Syntax Error on line 2"));
+			assertTrue("Parse Error", e.getMessage().contains("Parse Error: Syntax Error on line 2"));
 			throw e;
 		}
 	}
@@ -163,7 +153,22 @@ public class LessEngineTest {
 	    String result = engine.compile(getResource("less/import-from-subdir.less"));
 	    assertEquals(expected, result);
 	}
-
+	
+	@Test
+	public void testSample() throws LessException {
+	    String expected = ".box {\n" + 
+			"  color: #fe33ac;\n" + 
+			"  border-color: #fdcdea;\n" + 
+			"}\n" + 
+			".box div {\n" + 
+			"  box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);\n" + 
+			"  -webkit-box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);\n" + 
+			"  -moz-box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);\n" + 
+			"}\n";
+	    String result = engine.compile(getResource("less/sample.less"));
+	    assertEquals(expected, result);
+	}
+	
 	private URL getResource(String path) {
 		return getClass().getClassLoader().getResource("META-INF/" + path);
 	}

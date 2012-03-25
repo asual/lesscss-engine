@@ -25,7 +25,7 @@ public class LessException extends Exception {
 
 	private static final long serialVersionUID = 662552833197468936L;
 
-	private String errorType;
+	private String type;
 	private String filename;
 	private int line;
 	private int column;
@@ -45,11 +45,11 @@ public class LessException extends Exception {
 	
 	public LessException(String message, String errorType, String filename, int line, int column, List<String> extract) {
 		super(message);
-		this.errorType = errorType != null ? errorType : "LESS Error";
+		this.type = errorType != null ? errorType : "LESS Error";
 		this.filename = filename;
 		this.line = line;
 		this.column = column;
-		this.extract = extract;
+		this.extract = extract;	
 	}
 	
 	public LessException(Throwable e) {
@@ -58,8 +58,8 @@ public class LessException extends Exception {
 	
 	@Override
 	public String getMessage() {
-		if (errorType != null) {
-			String msg = String.format("%s: %s (line %s, column %s)", errorType, super.getMessage(), line, column);
+		if (type != null) {
+			String msg = String.format("%s: %s (line %s, column %s)", type, super.getMessage(), line, column);
 			if (!(extract == null) && !extract.isEmpty()) {
 				msg += " near";
 				for (String l : extract) {
@@ -71,12 +71,12 @@ public class LessException extends Exception {
 		
 		return super.getMessage();
 	}
-
+	
 	/**
 	 * Type of error as reported by less.js
 	 */
-	public String getErrorType() {
-		return errorType;
+	public String getType() {
+		return type;
 	}
 
 	/**

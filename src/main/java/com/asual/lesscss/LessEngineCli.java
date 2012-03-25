@@ -31,9 +31,9 @@ import org.apache.commons.cli.ParseException;
 /**
  * @author Rostislav Hristov
  */
-public class LessCommandLine {
+public class LessEngineCli {
 
-	public LessCommandLine(String[] args) throws LessException, URISyntaxException {
+	public static void main(String[] args) throws LessException, URISyntaxException {
 		Options cmdOptions = new Options();
 		cmdOptions.addOption(LessOptions.CHARSET_OPTION, true, "Input file charset encoding. Defaults to UTF-8.");
 		cmdOptions.addOption(LessOptions.COMPRESS_OPTION, false, "Flag that enables compressed CSS output.");
@@ -56,19 +56,21 @@ public class LessCommandLine {
 				options.setLess(new File(cmdLine.getOptionValue(LessOptions.LESS_OPTION)).toURI().toURL());
 			}
 			LessEngine engine = new LessEngine(options);
+			if (System.in.available() != 0) {
+				BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+				StringWriter sw = new StringWriter();
+				char[] buffer = new char[1024];
+				int n = 0;
+				while (-1 != (n = in.read(buffer))) {
+					sw.write(buffer, 0, n);
+				}
+				String src = sw.toString();
+				if (!src.isEmpty()) {
+					System.out.println(engine.compile(src, options.isCompress()));
+					System.exit(0);
+				}
+			}
 			String[] files = cmdLine.getArgs();
-			BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
-			StringWriter sw = new StringWriter();
-			char[] buffer = new char[1024];
-			int n = 0;
-			while (-1 != (n = in.read(buffer))) {
-				sw.write(buffer, 0, n);
-			}
-			String src = sw.toString();
-			if (!src.isEmpty()) {
-				System.out.println(engine.compile(src, options.isCompress()));
-				System.exit(0);
-			}
 			if (files.length == 1) {
 				System.out.println(engine.compile(new File(files[0]), options.isCompress()));
 				System.exit(0);

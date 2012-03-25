@@ -19,7 +19,6 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -153,53 +152,32 @@ public class LessEngine {
 		logger.debug("Parsing LESS Exception", root);
 		if (root instanceof JavaScriptException) {
 			Scriptable value = (Scriptable) ((JavaScriptException) root).getValue();
-			boolean hasName = ScriptableObject.hasProperty(value, "name");
-			boolean hasType = ScriptableObject.hasProperty(value, "type");
-			if (hasName || hasType) {
-				String errorType = "Error";
-				if (hasName) {
-					String type = (String) ScriptableObject.getProperty(value, "name");
-					if ("ParseError".equals(type)) {
-						errorType = "Parse Error";
-					} else {
-						errorType = type + " Error";
-					}
-				} else if (hasType) {
-					Object prop = ScriptableObject.getProperty(value, "type");
-					if (prop instanceof String) {
-						errorType = (String) prop + " Error"; 
-					}
-				}
-				String message = (String) ScriptableObject.getProperty(value, "message");
-				String filename = "";
-				if (ScriptableObject.hasProperty(value, "filename")) {
-					filename = (String) ScriptableObject.getProperty(value, "filename"); 
-				}
-				int line = -1;
-				if (ScriptableObject.hasProperty(value, "line")) {
-					line = ((Double) ScriptableObject.getProperty(value, "line")).intValue(); 
-				}
-				int column = -1;
-				if (ScriptableObject.hasProperty(value, "column")) {
-					column = ((Double) ScriptableObject.getProperty(value, "column")).intValue();
-				}				
-				List<String> extractList = new ArrayList<String>();
-				if (ScriptableObject.hasProperty(value, "extract")) {
-					NativeArray extract = (NativeArray) ScriptableObject.getProperty(value, "extract");
-					for (int i = 0; i < extract.getLength(); i++) {
-						if (extract.get(i, extract) instanceof String) {
-							extractList.add(((String) extract.get(i, extract)).replace("\t", " "));
-						}
-					}
-				}
-				throw new LessException(message, errorType, filename, line, column, extractList);
+			String type = (String) ScriptableObject.getProperty(value, "type") + " Error";
+			String message = (String) ScriptableObject.getProperty(value, "message");
+			String filename = "";
+			if (ScriptableObject.hasProperty(value, "filename")) {
+				filename = (String) ScriptableObject.getProperty(value, "filename"); 
 			}
+			int line = -1;
+			if (ScriptableObject.hasProperty(value, "line")) {
+				line = ((Double) ScriptableObject.getProperty(value, "line")).intValue(); 
+			}
+			int column = -1;
+			if (ScriptableObject.hasProperty(value, "column")) {
+				column = ((Double) ScriptableObject.getProperty(value, "column")).intValue();
+			}				
+			List<String> extractList = new ArrayList<String>();
+			if (ScriptableObject.hasProperty(value, "extract")) {
+				NativeArray extract = (NativeArray) ScriptableObject.getProperty(value, "extract");
+				for (int i = 0; i < extract.getLength(); i++) {
+					if (extract.get(i, extract) instanceof String) {
+						extractList.add(((String) extract.get(i, extract)).replace("\t", " "));
+					}
+				}
+			}
+			throw new LessException(message, type, filename, line, column, extractList);
 		}
 		throw new LessException(root);
-	}
-	
-	public static void main(String[] args) throws LessException, URISyntaxException {
-		new LessCommandLine(args);
 	}
 	
 }

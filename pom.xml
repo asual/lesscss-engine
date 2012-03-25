@@ -125,7 +125,7 @@
 						<configuration>
 							<archive>
 								<manifest>
-									<mainClass>com.asual.lesscss.LessEngine</mainClass>
+									<mainClass>com.asual.lesscss.LessEngineCli</mainClass>
 								</manifest>
 							</archive>
 							<descriptors>
