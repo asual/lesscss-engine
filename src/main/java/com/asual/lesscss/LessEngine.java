@@ -39,20 +39,22 @@ import org.mozilla.javascript.tools.shell.Global;
  * @author Noah Sloan
  */
 public class LessEngine {
-	
+
 	private final Log logger = LogFactory.getLog(getClass());
-	
+
+	private LessOptions options;
 	private Scriptable scope;
 	private ClassLoader classLoader;
 	private Function compileString;
 	private Function compileFile;
-	
+
 	public LessEngine() {
 		this(new LessOptions());
 	}
-	
-	public LessEngine(LessOptions options) {
-		try {
+
+	public LessEngine(LessOptions o) {
+		options = o;
+    try {
 			logger.debug("Initializing LESS Engine.");
 			classLoader = getClass().getClassLoader();
 			URL less = options.getLess();
@@ -78,11 +80,11 @@ public class LessEngine {
 			logger.error("LESS Engine intialization failed.", e);
 		}
 	}
-	
+
 	public String compile(String input) throws LessException {
-		return compile(input, false);
+		return compile(input, options.isCompress());
 	}
-	
+
 	public String compile(String input, boolean compress) throws LessException {
 		try {
 			long time = System.currentTimeMillis();
@@ -93,11 +95,11 @@ public class LessEngine {
 			throw parseLessException(e);
 		}
 	}
-	
+
 	public String compile(URL input) throws LessException {
-		return compile(input, false);
+		return compile(input, options.isCompress());
 	}
-	
+
 	public String compile(URL input, boolean compress) throws LessException {
 		try {
 			long time = System.currentTimeMillis();
@@ -109,11 +111,11 @@ public class LessEngine {
 			throw parseLessException(e);
 		}
 	}
-	
+
 	public String compile(File input) throws LessException {
-		return compile(input, false);
+		return compile(input, options.isCompress());
 	}
-	
+
 	public String compile(File input, boolean compress) throws LessException {
 		try {
 			long time = System.currentTimeMillis();
@@ -125,11 +127,11 @@ public class LessEngine {
 			throw parseLessException(e);
 		}
 	}
-	
+
 	public void compile(File input, File output) throws LessException, IOException {
-		compile(input, output, false);
+		compile(input, output, options.isCompress());
 	}
-	
+
 	public void compile(File input, File output, boolean compress) throws LessException, IOException {
 		try {
 			String content = compile(input, compress);
@@ -147,7 +149,7 @@ public class LessEngine {
 	private synchronized String call(Function fn, Object[] args) {
 		return (String) Context.call(null, fn, scope, scope, args);
 	}
-	
+
 	private LessException parseLessException(Exception root) throws LessException {
 		logger.debug("Parsing LESS Exception", root);
 		if (root instanceof JavaScriptException) {
@@ -156,16 +158,16 @@ public class LessEngine {
 			String message = (String) ScriptableObject.getProperty(value, "message");
 			String filename = "";
 			if (ScriptableObject.hasProperty(value, "filename")) {
-				filename = (String) ScriptableObject.getProperty(value, "filename"); 
+				filename = (String) ScriptableObject.getProperty(value, "filename");
 			}
 			int line = -1;
 			if (ScriptableObject.hasProperty(value, "line")) {
-				line = ((Double) ScriptableObject.getProperty(value, "line")).intValue(); 
+				line = ((Double) ScriptableObject.getProperty(value, "line")).intValue();
 			}
 			int column = -1;
 			if (ScriptableObject.hasProperty(value, "column")) {
 				column = ((Double) ScriptableObject.getProperty(value, "column")).intValue();
-			}				
+			}
 			List<String> extractList = new ArrayList<String>();
 			if (ScriptableObject.hasProperty(value, "extract")) {
 				NativeArray extract = (NativeArray) ScriptableObject.getProperty(value, "extract");
@@ -179,5 +181,5 @@ public class LessEngine {
 		}
 		throw new LessException(root);
 	}
-	
+
 }
