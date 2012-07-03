@@ -159,15 +159,15 @@ public class LessEngine {
 				filename = (String) ScriptableObject.getProperty(value, "filename"); 
 			}
 			int line = -1;
-			if (ScriptableObject.hasProperty(value, "line")) {
+			if (ScriptableObject.hasProperty(value, "line") && ScriptableObject.getProperty(value, "line") != null) {
 				line = ((Double) ScriptableObject.getProperty(value, "line")).intValue(); 
 			}
 			int column = -1;
-			if (ScriptableObject.hasProperty(value, "column")) {
+			if (ScriptableObject.hasProperty(value, "column") && ScriptableObject.getProperty(value, "column") != null) {
 				column = ((Double) ScriptableObject.getProperty(value, "column")).intValue();
 			}				
 			List<String> extractList = new ArrayList<String>();
-			if (ScriptableObject.hasProperty(value, "extract")) {
+			if (ScriptableObject.hasProperty(value, "extract") && ScriptableObject.getProperty(value, "extract") != null) {
 				NativeArray extract = (NativeArray) ScriptableObject.getProperty(value, "extract");
 				for (int i = 0; i < extract.getLength(); i++) {
 					if (extract.get(i, extract) instanceof String) {

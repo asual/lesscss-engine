@@ -174,6 +174,16 @@ public class LessEngineTest {
 	    assertEquals(expected, result);
 	}
 	
+	@Test(expected = LessException.class)
+	public void testImportWithMissingUrl() throws Exception {
+	    try {
+	    	engine.compile(getResource("less/import-missing.less"));
+	    } catch (Exception e) {
+	    	assertTrue("No such file", e.getMessage().contains("No such file"));
+			throw e;
+		}
+	}
+	
 	@Test
 	public void testSample() throws LessException {
 	    String expected = ".box {\n" + 
