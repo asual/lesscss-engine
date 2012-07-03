@@ -147,6 +147,26 @@ public class LessEngineTest {
 		}
 	}
 	
+	@Test(expected = LessException.class)
+	public void testParseUnbalancedInputUnder() throws IOException, LessException {
+		try {
+			engine.compile(getResource("less/unbalanced-under-error.less"));
+		} catch (LessException e) {
+			assertTrue("Parse Error", e.getMessage().contains("Parse Error: missing closing `}`"));
+			throw e;
+		}
+	}
+	
+	@Test(expected = LessException.class)
+	public void testParseUnbalancedInputOver() throws IOException, LessException {
+		try {
+			engine.compile(getResource("less/unbalanced-over-error.less"));
+		} catch (LessException e) {
+			assertTrue("Parse Error", e.getMessage().contains("Parse Error: missing opening `{`"));
+			throw e;
+		}
+	}
+	
 	@Test
 	public void testImportWithUrl() throws LessException {
 	    String expected = "a {\n  color: #dddddd;\n  background-image: url(img/logo.png);\n}\n";
