@@ -147,11 +147,31 @@ public class LessEngineTest {
 		}
 	}
 	
+	@Test(expected = LessException.class)
+	public void testParseUnbalancedInputUnder() throws IOException, LessException {
+		try {
+			engine.compile(getResource("less/unbalanced-under-error.less"));
+		} catch (LessException e) {
+			assertTrue("Parse Error", e.getMessage().contains("Parse Error: missing closing `}`"));
+			throw e;
+		}
+	}
+	
 	@Test
 	public void testImportWithUrl() throws LessException {
 	    String expected = "a {\n  color: #dddddd;\n  background-image: url(img/logo.png);\n}\n";
 	    String result = engine.compile(getResource("less/import-from-subdir.less"));
 	    assertEquals(expected, result);
+	}
+	
+	@Test(expected = LessException.class)
+	public void testImportWithMissingUrl() throws Exception {
+	    try {
+	    	engine.compile(getResource("less/import-missing.less"));
+	    } catch (Exception e) {
+	    	assertTrue("No such file", e.getMessage().contains("No such file"));
+			throw e;
+		}
 	}
 	
 	@Test
