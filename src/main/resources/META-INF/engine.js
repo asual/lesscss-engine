@@ -26,6 +26,8 @@ var compileString = function(css, compress) {
 		}
 		if (path != null) {
 			new(less.Parser)({ optimization: 3, paths: [String(path).replace(/[\w\.-]+$/, '')] }).parse(readUrl(path, lessenv.charset).replace(/\r/g, ''), function (e, root) {
+				if (e instanceof Object)
+					throw e;
 				fn(e, root);
 				if (e instanceof Object)
 					throw e;
@@ -33,6 +35,8 @@ var compileString = function(css, compress) {
 		}
 	};
 	new (less.Parser) ({ optimization: 3 }).parse(css, function (e, root) {
+		if (e instanceof Object)
+			throw e;
 		result = root.toCSS();
 		if (compress)
 			result = exports.compressor.cssmin(result);
@@ -57,6 +61,8 @@ var compileFile = function(file, classLoader, compress) {
 		}
 		if (path != null) {
 			new(less.Parser)({ optimization: 3, paths: [String(path).replace(/[\w\.-]+$/, '')] }).parse(readUrl(path, lessenv.charset).replace(/\r/g, ''), function (e, root) {
+				if (e instanceof Object)
+					throw e;
 				fn(e, root);
 				if (e instanceof Object)
 					throw e;
@@ -64,6 +70,8 @@ var compileFile = function(file, classLoader, compress) {
 		}
 	};
 	new(less.Parser)({ optimization: 3, paths: [file.replace(/[\w\.-]+$/, '')] }).parse(readUrl(file, lessenv.charset).replace(/\r/g, ''), function (e, root) {
+		if (e instanceof Object)
+			throw e;
 		result = root.toCSS();
 		if (compress)
 			result = exports.compressor.cssmin(result);
