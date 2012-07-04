@@ -443,11 +443,11 @@ less.Parser = function Parser(env) {
                         default:                                    chunk.push(c);
                     }
                 }
-                if (level != 0) {
+                if (level > 0) {
                     error = new(LessError)({
                         index: i,
                         type: 'Parse',
-                        message: (level > 0) ? "missing closing `}`" : "missing opening `{`",
+                        message: "missing closing `}`",
                         filename: env.filename
                     }, env);
                 }
@@ -456,7 +456,7 @@ less.Parser = function Parser(env) {
             })([[]]);
 
             if (error) {
-                return callback(error, env);
+                return callback(error);
             }
 
             // Start with the primary rule.
