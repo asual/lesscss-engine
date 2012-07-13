@@ -152,22 +152,22 @@ public class LessEngine {
 		logger.debug("Parsing LESS Exception", root);
 		if (root instanceof JavaScriptException) {
 			Scriptable value = (Scriptable) ((JavaScriptException) root).getValue();
-			String type = (String) ScriptableObject.getProperty(value, "type") + " Error";
-			String message = (String) ScriptableObject.getProperty(value, "message");
+			String type = ScriptableObject.getProperty(value, "type").toString() + " Error";
+			String message = ScriptableObject.getProperty(value, "message").toString();
 			String filename = "";
-			if (ScriptableObject.hasProperty(value, "filename")) {
-				filename = (String) ScriptableObject.getProperty(value, "filename"); 
+			if (ScriptableObject.getProperty(value, "filename") != null) {
+				filename = ScriptableObject.getProperty(value, "filename").toString();
 			}
 			int line = -1;
-			if (ScriptableObject.hasProperty(value, "line") && ScriptableObject.getProperty(value, "line") != null) {
-				line = ((Double) ScriptableObject.getProperty(value, "line")).intValue(); 
+			if (ScriptableObject.getProperty(value, "line") != null) {
+				line = ((Double) ScriptableObject.getProperty(value, "line")).intValue();
 			}
 			int column = -1;
-			if (ScriptableObject.hasProperty(value, "column") && ScriptableObject.getProperty(value, "column") != null) {
+			if (ScriptableObject.getProperty(value, "column") != null) {
 				column = ((Double) ScriptableObject.getProperty(value, "column")).intValue();
-			}				
+			}
 			List<String> extractList = new ArrayList<String>();
-			if (ScriptableObject.hasProperty(value, "extract") && ScriptableObject.getProperty(value, "extract") != null) {
+			if (ScriptableObject.getProperty(value, "extract") != null) {
 				NativeArray extract = (NativeArray) ScriptableObject.getProperty(value, "extract");
 				for (int i = 0; i < extract.getLength(); i++) {
 					if (extract.get(i, extract) instanceof String) {
