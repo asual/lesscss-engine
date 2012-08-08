@@ -28,9 +28,9 @@ less.Parser.importer = function(path, paths, fn) {
 	}
 };
 
-var compileString = function(css, location, compress) {
+var compile = function(source, location, compress) {
 	var result;
-	new (less.Parser) ({ optimization: 3, paths: [basePath(location)] }).parse(css, function (e, root) {
+	new (less.Parser) ({ optimization: 3, paths: [basePath(location)] }).parse(source, function (e, root) {
 		if (e instanceof Object)
 			throw e;
 		result = root.toCSS();
@@ -42,16 +42,3 @@ var compileString = function(css, location, compress) {
 	return result;
 };
 
-var compileFile = function(file, compress) {
-	var result;
-	new(less.Parser)({ optimization: 3, paths: [basePath(file)] }).parse(String(lessenv.loader.load(file, lessenv.charset)), function (e, root) {
-		if (e instanceof Object)
-			throw e;
-		result = root.toCSS();
-		if (compress)
-			result = exports.compressor.cssmin(result);
-		if (e instanceof Object)
-			throw e;
-	});
-	return result;
-};

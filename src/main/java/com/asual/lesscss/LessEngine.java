@@ -49,9 +49,11 @@ public class LessEngine {
 	
 	private final Log logger = LogFactory.getLog(getClass());
 	
+	private final LessOptions options;
+	private final ResourceLoader loader;
+	
 	private Scriptable scope;
-	private Function compileString;
-	private Function compileFile;
+	private Function compile;
 	
 	public LessEngine() {
 		this(new LessOptions());
@@ -73,6 +75,8 @@ public class LessEngine {
 	}
 	
 	public LessEngine(LessOptions options, ResourceLoader loader) {
+		this.options = options;
+		this.loader = loader;
 		try {
 			logger.debug("Initializing LESS Engine.");
 			ClassLoader classLoader = getClass().getClassLoader();
@@ -94,8 +98,7 @@ public class LessEngine {
 			cx.evaluateReader(scope, new InputStreamReader(less.openConnection().getInputStream()), less.getFile(), 1, null);
 			cx.evaluateReader(scope, new InputStreamReader(cssmin.openConnection().getInputStream()), cssmin.getFile(), 1, null);
 			cx.evaluateReader(scope, new InputStreamReader(engine.openConnection().getInputStream()), engine.getFile(), 1, null);
-			compileString = (Function) scope.get("compileString", scope);
-			compileFile = (Function) scope.get("compileFile", scope);
+			compile = (Function) scope.get("compile", scope);
 			Context.exit();
 		} catch (Exception e) {
 			logger.error("LESS Engine intialization failed.", e);
@@ -113,7 +116,7 @@ public class LessEngine {
 	public String compile(String input, String location, boolean compress) throws LessException {
 		try {
 			long time = System.currentTimeMillis();
-			String result = call(compileString, new Object[] { input,
+			String result = call(compile, new Object[] { input,
 					location == null ? "" : location, compress });
 			logger.debug("The compilation of '" + input + "' took " + (System.currentTimeMillis () - time) + " ms.");
 			return result;
@@ -129,8 +132,10 @@ public class LessEngine {
 	public String compile(URL input, boolean compress) throws LessException {
 		try {
 			long time = System.currentTimeMillis();
-			logger.debug("Compiling URL: " + input.getProtocol() + ":" + input.getFile());
-			String result = call(compileFile, new Object[] {input.getProtocol() + ":" + input.getFile(), compress});
+			String location = input.toString();
+			logger.debug("Compiling URL: " + location);
+			String source = loader.load(location, options.getCharset());
+			String result = call(compile, new Object[] {source, location, compress});
 			logger.debug("The compilation of '" + input + "' took " + (System.currentTimeMillis () - time) + " ms.");
 			return result;
 		} catch (Exception e) {
@@ -145,8 +150,10 @@ public class LessEngine {
 	public String compile(File input, boolean compress) throws LessException {
 		try {
 			long time = System.currentTimeMillis();
-			logger.debug("Compiling File: " + "file:" + input.getAbsolutePath());
-			String result = call(compileFile, new Object[] {"file:" + input.getAbsolutePath(), compress});
+			String location = input.getAbsolutePath();
+			logger.debug("Compiling File: " + "file:" + location);
+			String source = loader.load(location, options.getCharset());
+			String result = call(compile, new Object[] {source, location, compress});
 			logger.debug("The compilation of '" + input + "' took " + (System.currentTimeMillis () - time) + " ms.");
 			return result;
 		} catch (Exception e) {
