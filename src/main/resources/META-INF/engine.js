@@ -28,9 +28,9 @@ less.Parser.importer = function(path, paths, fn) {
 	}
 };
 
-var compileString = function(css, compress) {
+var compileString = function(css, location, compress) {
 	var result;
-	new (less.Parser) ({ optimization: 3 }).parse(css, function (e, root) {
+	new (less.Parser) ({ optimization: 3, paths: [basePath(location)] }).parse(css, function (e, root) {
 		if (e instanceof Object)
 			throw e;
 		result = root.toCSS();

@@ -66,7 +66,7 @@ public class LessEngineCli {
 				}
 				String src = sw.toString();
 				if (!src.isEmpty()) {
-					System.out.println(engine.compile(src, options.isCompress()));
+					System.out.println(engine.compile(src, null, options.isCompress()));
 					System.exit(0);
 				}
 			}

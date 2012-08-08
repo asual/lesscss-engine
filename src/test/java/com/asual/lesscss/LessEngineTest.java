@@ -57,6 +57,28 @@ public class LessEngineTest {
 	}
 
 	@Test
+	public void compileStringWithLocation() throws LessException {
+		/*
+		 * A template engine would extract the <style type="text/less"> block
+		 * from META-INF/template.html and compile it. Here, we're skipping the
+		 * extraction and passing the stylesheet body and template location 
+		 * to the engine directly.
+		 */
+		String in = "@import \"less/subdir/import-from-root.less\";\n" +
+		            "@import \"classpath:META-INF/less/import.less\";\n" +
+		            "body { color: @color; }";
+		String out = "a {\n" + 
+					 "  color: #dddddd;\n" + 
+				     "  background-image: url(img/logo.png);\n" + 
+					 "}\n" + 
+				     "body {\n" +
+				     "  color: #f0f0f0;\n" +
+				     "}\n";
+		assertEquals(out, engine.compile(in, getResource("template.html")
+				.toString(), false));
+	}
+
+	@Test
 	public void compileToString() throws LessException, IOException {
 		assertEquals("body {\n  color: #f0f0f0;\n}\n",
 				engine.compile(getResource("less/classpath.less")));

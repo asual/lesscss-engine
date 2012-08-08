@@ -103,13 +103,18 @@ public class LessEngine {
 	}
 	
 	public String compile(String input) throws LessException {
-		return compile(input, false);
+		return compile(input, null, false);
 	}
 	
-	public String compile(String input, boolean compress) throws LessException {
+	public String compile(String input, String location) throws LessException {
+		return compile(input, location, false);
+	}
+	
+	public String compile(String input, String location, boolean compress) throws LessException {
 		try {
 			long time = System.currentTimeMillis();
-			String result = call(compileString, new Object[] {input, compress});
+			String result = call(compileString, new Object[] { input,
+					location == null ? "" : location, compress });
 			logger.debug("The compilation of '" + input + "' took " + (System.currentTimeMillis () - time) + " ms.");
 			return result;
 		} catch (Exception e) {
