@@ -23,6 +23,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.MalformedURLException;
 import java.net.URL;
 
 import org.junit.BeforeClass;
@@ -54,6 +55,28 @@ public class LessEngineTest {
 		String path = getResource("less/import.less").getPath();
 		assertEquals("body {\n  color: #f0f0f0;\n}\n", 
 				engine.compile("@import url('" + path + "'); body { color: @color; }"));
+	}
+
+	@Test
+	public void compileStringWithLocation() throws LessException {
+		/*
+		 * A template engine would extract the <style type="text/less"> block
+		 * from META-INF/template.html and compile it. Here, we're skipping the
+		 * extraction and passing the stylesheet body and template location 
+		 * to the engine directly.
+		 */
+		String in = "@import \"less/subdir/import-from-root.less\";\n" +
+		            "@import \"classpath:META-INF/less/import.less\";\n" +
+		            "body { color: @color; }";
+		String out = "a {\n" + 
+					 "  color: #dddddd;\n" + 
+				     "  background-image: url(img/logo.png);\n" + 
+					 "}\n" + 
+				     "body {\n" +
+				     "  color: #f0f0f0;\n" +
+				     "}\n";
+		assertEquals(out, engine.compile(in, getResource("template.html")
+				.toString(), false));
 	}
 
 	@Test
@@ -188,6 +211,15 @@ public class LessEngineTest {
 	    String result = engine.compile(getResource("less/sample.less"));
 	    assertEquals(expected, result);
 	}
+
+	// Test disabled by default, because it requires interent access and depends
+	// on specific less demo. Uncomment to try it.
+	/* @Test
+	public void testRemote() throws LessException, MalformedURLException {
+		String result = engine.compile(new URL(
+				"http://verekia.com/demo/less-css/style.less"));
+		assertTrue(result != null && result.length() > 0);
+	} */
 	
 	private URL getResource(String path) {
 		return getClass().getClassLoader().getResource("META-INF/" + path);

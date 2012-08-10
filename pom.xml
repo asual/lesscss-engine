@@ -86,6 +86,7 @@
 					<include>log4j.xml</include>
 					<include>**/*.css</include>
 					<include>**/*.less</include>
+					<include>**/*.html</include>
 				</includes>
 			</testResource>
 		</testResources>
