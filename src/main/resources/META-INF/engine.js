@@ -5,10 +5,7 @@ delete arguments;
 
 var basePath = function(path) {
 	if (path != null) {
-		var i = path.lastIndexOf('/');
-		if(i > 0) {
-			return path.substr(0, i + 1);
-		}
+		return path.replace(/^(.*[\/\\])[^\/\\]*$/, '$1');
 	}
 	return "";
 }
