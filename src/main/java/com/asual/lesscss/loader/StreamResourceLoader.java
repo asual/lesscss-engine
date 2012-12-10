@@ -22,7 +22,7 @@ import java.util.regex.Pattern;
  */
 public abstract class StreamResourceLoader implements ResourceLoader {
 
-	private static final Pattern PATTERN = Pattern.compile("^([\\w]+):(.*)");
+	private static final Pattern PATTERN = Pattern.compile("^([\\w]{2,}):(.*)");
 
 	/**
 	 * Returns the schema name associated with the loader.
