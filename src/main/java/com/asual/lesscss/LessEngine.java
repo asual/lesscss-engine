@@ -38,6 +38,7 @@ import com.asual.lesscss.loader.ClasspathResourceLoader;
 import com.asual.lesscss.loader.CssProcessingResourceLoader;
 import com.asual.lesscss.loader.FilesystemResourceLoader;
 import com.asual.lesscss.loader.HTTPResourceLoader;
+import com.asual.lesscss.loader.JNDIResourceLoader;
 import com.asual.lesscss.loader.ResourceLoader;
 import com.asual.lesscss.loader.UnixNewlinesResourceLoader;
 
@@ -68,6 +69,7 @@ public class LessEngine {
 		ResourceLoader resourceLoader = new ChainedResourceLoader(
 				new FilesystemResourceLoader(), new ClasspathResourceLoader(
 						LessEngine.class.getClassLoader()),
+				new JNDIResourceLoader(),
 				new HTTPResourceLoader());
 		if(options.isCss()) {
 			return new CssProcessingResourceLoader(resourceLoader);			
