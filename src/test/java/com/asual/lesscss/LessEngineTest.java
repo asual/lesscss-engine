@@ -23,7 +23,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.MalformedURLException;
 import java.net.URL;
 
 import org.junit.BeforeClass;
@@ -165,7 +164,7 @@ public class LessEngineTest {
 		try {
 			engine.compile(getResource("less/parse-error.less"));
 		} catch (LessException e) {
-			assertTrue("Parse Error", e.getMessage().contains("Parse Error: Syntax Error on line 2"));
+			assertTrue("Parse Error", e.getMessage().contains("Parse Error: Unrecognised input"));
 			throw e;
 		}
 	}
@@ -211,15 +210,6 @@ public class LessEngineTest {
 	    String result = engine.compile(getResource("less/sample.less"));
 	    assertEquals(expected, result);
 	}
-
-	// Test disabled by default, because it requires interent access and depends
-	// on specific less demo. Uncomment to try it.
-	/* @Test
-	public void testRemote() throws LessException, MalformedURLException {
-		String result = engine.compile(new URL(
-				"http://verekia.com/demo/less-css/style.less"));
-		assertTrue(result != null && result.length() > 0);
-	} */
 	
 	private URL getResource(String path) {
 		return getClass().getClassLoader().getResource("META-INF/" + path);

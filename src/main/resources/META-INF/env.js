@@ -5,9 +5,20 @@ var lessenv = {
 		readUrl: readUrl
 	},
 	arguments = [''],
-	exports = {};
+	exports = {},
+	location = {
+		port: 0
+	},
+	document = {
+		getElementsByTagName: function(name) {
+			return [];
+		}
+	},
+	window = {
+		less: {}
+	};
 
-print = function() {};
+//print = function() {};
 quit = function() {};
 readFile = function() {
 	return '';

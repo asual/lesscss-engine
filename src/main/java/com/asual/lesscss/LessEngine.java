@@ -31,6 +31,7 @@ import org.mozilla.javascript.JavaScriptException;
 import org.mozilla.javascript.NativeArray;
 import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
+import org.mozilla.javascript.UniqueTag;
 import org.mozilla.javascript.tools.shell.Global;
 
 import com.asual.lesscss.loader.ChainedResourceLoader;
@@ -71,9 +72,9 @@ public class LessEngine {
 						LessEngine.class.getClassLoader()),
 				new JNDIResourceLoader(),
 				new HTTPResourceLoader());
-		if(options.isCss()) {
+		if (options.isCss()) {
 			return new CssProcessingResourceLoader(resourceLoader);			
-		} 
+		}
 		resourceLoader = new UnixNewlinesResourceLoader(resourceLoader);
 		return resourceLoader;
 	}
@@ -90,7 +91,7 @@ public class LessEngine {
 			URL cssmin = classLoader.getResource("META-INF/cssmin.js");
 			Context cx = Context.enter();
 			logger.debug("Using implementation version: " + cx.getImplementationVersion());
-			cx.setOptimizationLevel(9);
+			cx.setOptimizationLevel(-1);
 			Global global = new Global();
 			global.init(cx);
 			scope = cx.initStandardObjects(global);
@@ -186,6 +187,11 @@ public class LessEngine {
 	private synchronized String call(Function fn, Object[] args) {
 		return (String) Context.call(null, fn, scope, scope, args);
 	}
+
+	private boolean hasProperty(Scriptable value, String name) {
+		Object property = ScriptableObject.getProperty(value, name);
+		return property != null && !property.equals(UniqueTag.NOT_FOUND);
+	}
 	
 	private LessException parseLessException(Exception root) throws LessException {
 		logger.debug("Parsing LESS Exception", root);
@@ -194,19 +200,19 @@ public class LessEngine {
 			String type = ScriptableObject.getProperty(value, "type").toString() + " Error";
 			String message = ScriptableObject.getProperty(value, "message").toString();
 			String filename = "";
-			if (ScriptableObject.getProperty(value, "filename") != null) {
+			if (hasProperty(value, "filename")) {
 				filename = ScriptableObject.getProperty(value, "filename").toString();
 			}
 			int line = -1;
-			if (ScriptableObject.getProperty(value, "line") != null) {
+			if (hasProperty(value, "line")) {
 				line = ((Double) ScriptableObject.getProperty(value, "line")).intValue();
 			}
 			int column = -1;
-			if (ScriptableObject.getProperty(value, "column") != null) {
+			if (hasProperty(value, "column")) {
 				column = ((Double) ScriptableObject.getProperty(value, "column")).intValue();
 			}
 			List<String> extractList = new ArrayList<String>();
-			if (ScriptableObject.getProperty(value, "extract") != null) {
+			if (hasProperty(value, "extract")) {
 				NativeArray extract = (NativeArray) ScriptableObject.getProperty(value, "extract");
 				for (int i = 0; i < extract.getLength(); i++) {
 					if (extract.get(i, extract) instanceof String) {
