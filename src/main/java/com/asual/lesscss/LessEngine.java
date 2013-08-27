@@ -199,7 +199,7 @@ public class LessEngine {
 		}
 	}
 
-	private synchronized String call(Function fn, Object[] args) {
+	private String call(Function fn, Object[] args) {
 		return (String) Context.call(null, fn, scope, scope, args);
 	}
 
