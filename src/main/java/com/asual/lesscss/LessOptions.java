@@ -20,7 +20,7 @@ import java.net.URL;
  * @author Rostislav Hristov
  */
 public class LessOptions {
-	
+
 	public static final String CHARSET_OPTION = "charset";
 	public static final String COMPRESS_OPTION = "compress";
 	public static final String CSS_OPTION = "css";
@@ -30,41 +30,41 @@ public class LessOptions {
 	private boolean compress;
 	private boolean css;
 	private URL less;
-	
+
 	public String getCharset() {
 		if (charset == null) {
 			return "UTF-8";
 		}
 		return charset;
 	}
-	
+
 	public void setCharset(String charset) {
 		this.charset = charset;
 	}
-	
+
 	public URL getLess() {
 		if (less == null) {
 			return getClass().getClassLoader().getResource("META-INF/less.js");
 		}
 		return less;
 	}
-	
+
 	public void setLess(URL less) {
 		this.less = less;
 	}
-	
+
 	public boolean isCss() {
 		return css;
 	}
-	
+
 	public void setCss(boolean css) {
 		this.css = css;
 	}
-	
+
 	public boolean isCompress() {
 		return compress;
 	}
-	
+
 	public void setCompress(boolean compress) {
 		this.compress = compress;
 	}

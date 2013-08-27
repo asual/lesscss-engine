@@ -16,7 +16,6 @@ package com.asual.lesscss;
 
 import java.util.List;
 
-
 /**
  * @author Rostislav Hristov
  * @author Uriah Carpenter
@@ -30,36 +29,38 @@ public class LessException extends Exception {
 	private int line;
 	private int column;
 	private List<String> extract;
-	
+
 	public LessException() {
 		super();
 	}
-	
+
 	public LessException(String message) {
 		super(message);
 	}
-	
+
 	public LessException(String message, Throwable e) {
 		super(message, e);
 	}
-	
-	public LessException(String message, String errorType, String filename, int line, int column, List<String> extract) {
+
+	public LessException(String message, String errorType, String filename,
+			int line, int column, List<String> extract) {
 		super(message);
 		this.type = errorType != null ? errorType : "LESS Error";
 		this.filename = filename;
 		this.line = line;
 		this.column = column;
-		this.extract = extract;	
+		this.extract = extract;
 	}
-	
+
 	public LessException(Throwable e) {
 		super(e);
 	}
-	
+
 	@Override
 	public String getMessage() {
 		if (type != null) {
-			String msg = String.format("%s: %s (line %s, column %s)", type, super.getMessage(), line, column);
+			String msg = String.format("%s: %s (line %s, column %s)", type,
+					super.getMessage(), line, column);
 			if (!(extract == null) && !extract.isEmpty()) {
 				msg += " near";
 				for (String l : extract) {
@@ -68,10 +69,10 @@ public class LessException extends Exception {
 			}
 			return msg;
 		}
-		
+
 		return super.getMessage();
 	}
-	
+
 	/**
 	 * Type of error as reported by less.js
 	 */
@@ -94,17 +95,18 @@ public class LessException extends Exception {
 	}
 
 	/**
-	 * Column number where error occurred as reported by less.js or -1 if unknown.
+	 * Column number where error occurred as reported by less.js or -1 if
+	 * unknown.
 	 */
 	public int getColumn() {
 		return column;
 	}
-	
+
 	/**
 	 * Lines around error as reported by less.js
 	 */
 	public List<String> getExtract() {
 		return extract;
 	}
-	
+
 }

@@ -33,18 +33,24 @@ import org.apache.commons.cli.ParseException;
  */
 public class LessEngineCli {
 
-	public static void main(String[] args) throws LessException, URISyntaxException {
+	public static void main(String[] args) throws LessException,
+			URISyntaxException {
 		Options cmdOptions = new Options();
-		cmdOptions.addOption(LessOptions.CHARSET_OPTION, true, "Input file charset encoding. Defaults to UTF-8.");
-		cmdOptions.addOption(LessOptions.COMPRESS_OPTION, false, "Flag that enables compressed CSS output.");
-		cmdOptions.addOption(LessOptions.CSS_OPTION, false, "Flag that enables compilation of .css files.");
-		cmdOptions.addOption(LessOptions.LESS_OPTION, true, "Path to a custom less.js for Rhino version.");
+		cmdOptions.addOption(LessOptions.CHARSET_OPTION, true,
+				"Input file charset encoding. Defaults to UTF-8.");
+		cmdOptions.addOption(LessOptions.COMPRESS_OPTION, false,
+				"Flag that enables compressed CSS output.");
+		cmdOptions.addOption(LessOptions.CSS_OPTION, false,
+				"Flag that enables compilation of .css files.");
+		cmdOptions.addOption(LessOptions.LESS_OPTION, true,
+				"Path to a custom less.js for Rhino version.");
 		try {
 			CommandLineParser cmdParser = new GnuParser();
 			CommandLine cmdLine = cmdParser.parse(cmdOptions, args);
 			LessOptions options = new LessOptions();
 			if (cmdLine.hasOption(LessOptions.CHARSET_OPTION)) {
-				options.setCharset(cmdLine.getOptionValue(LessOptions.CHARSET_OPTION));
+				options.setCharset(cmdLine
+						.getOptionValue(LessOptions.CHARSET_OPTION));
 			}
 			if (cmdLine.hasOption(LessOptions.COMPRESS_OPTION)) {
 				options.setCompress(true);
@@ -53,11 +59,14 @@ public class LessEngineCli {
 				options.setCss(true);
 			}
 			if (cmdLine.hasOption(LessOptions.LESS_OPTION)) {
-				options.setLess(new File(cmdLine.getOptionValue(LessOptions.LESS_OPTION)).toURI().toURL());
+				options.setLess(new File(cmdLine
+						.getOptionValue(LessOptions.LESS_OPTION)).toURI()
+						.toURL());
 			}
 			LessEngine engine = new LessEngine(options);
 			if (System.in.available() != 0) {
-				BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+				BufferedReader in = new BufferedReader(new InputStreamReader(
+						System.in));
 				StringWriter sw = new StringWriter();
 				char[] buffer = new char[1024];
 				int n = 0;
@@ -66,28 +75,33 @@ public class LessEngineCli {
 				}
 				String src = sw.toString();
 				if (!src.isEmpty()) {
-					System.out.println(engine.compile(src, null, options.isCompress()));
+					System.out.println(engine.compile(src, null,
+							options.isCompress()));
 					System.exit(0);
 				}
 			}
 			String[] files = cmdLine.getArgs();
 			if (files.length == 1) {
-				System.out.println(engine.compile(new File(files[0]), options.isCompress()));
+				System.out.println(engine.compile(new File(files[0]),
+						options.isCompress()));
 				System.exit(0);
 			}
 			if (files.length == 2) {
-				engine.compile(new File(files[0]), new File(files[1]), options.isCompress());
+				engine.compile(new File(files[0]), new File(files[1]),
+						options.isCompress());
 				System.exit(0);
 			}
-			
+
 		} catch (IOException ioe) {
 			System.err.println("Error opening input file.");
 		} catch (ParseException pe) {
 			System.err.println("Error parsing arguments.");
 		}
-		String[] paths = LessEngine.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath().split(File.separator);
+		String[] paths = LessEngine.class.getProtectionDomain().getCodeSource()
+				.getLocation().toURI().getPath().split(File.separator);
 		HelpFormatter formatter = new HelpFormatter();
-		formatter.printHelp("java -jar " + paths[paths.length - 1] + " input [output] [options]", cmdOptions);
+		formatter.printHelp("java -jar " + paths[paths.length - 1]
+				+ " input [output] [options]", cmdOptions);
 		System.exit(1);
 	}
 

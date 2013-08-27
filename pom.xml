@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-	
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.asual.lesscss</groupId>
 	<artifactId>lesscss-engine</artifactId>
@@ -9,7 +10,7 @@
 	<name>LESS Engine</name>
 	<description>A Java wrapper for LESS (http://lesscss.org). LESS extends CSS with: variables, mixins, operations and nested rules.</description>
 	<url>http://www.asual.com/lesscss</url>
-	
+
 	<licenses>
 		<license>
 			<name>The Apache Software License, Version 2.0</name>
@@ -17,25 +18,25 @@
 			<distribution>repo</distribution>
 		</license>
 	</licenses>
-	
+
 	<scm>
 		<url>http://github.com/asual/lesscss-engine</url>
 		<connection>scm:git:git://github.com:asual/lesscss-engine.git</connection>
 		<developerConnection>scm:git:git@github.com:asual/lesscss-engine.git</developerConnection>
-	  <tag>HEAD</tag>
-  </scm>
-	
+		<tag>HEAD</tag>
+	</scm>
+
 	<developers>
 		<developer>
 			<name>Rostislav Hristov</name>
 			<email>rostislav@asual.com</email>
 		</developer>
 	</developers>
-	
+
 	<organization>
 		<name>Asual DZZD</name>
 	</organization>
-	
+
 	<distributionManagement>
 		<repository>
 			<id>com.asual.repositories.releases</id>
@@ -45,15 +46,15 @@
 		<snapshotRepository>
 			<id>com.asual.repositories.snapshots</id>
 			<name>Asual Snapshots Repository</name>
-			<url>http://www.asual.com/maven/content/repositories/snapshots</url>		
+			<url>http://www.asual.com/maven/content/repositories/snapshots</url>
 		</snapshotRepository>
 	</distributionManagement>
-	
+
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 	</properties>
-	
+
 	<dependencies>
 		<dependency>
 			<groupId>org.mozilla</groupId>
@@ -78,7 +79,7 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
-	
+
 	<build>
 		<testResources>
 			<testResource>
@@ -166,7 +167,7 @@
 			</plugin>
 		</plugins>
 	</build>
-	
+
 	<profiles>
 		<profile>
 			<id>release-sign-artifacts</id>
@@ -196,5 +197,5 @@
 			</build>
 		</profile>
 	</profiles>
-	
+
 </project>

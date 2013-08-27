@@ -8,11 +8,8 @@ var basePath = function(path) {
 		return path.replace(/^(.*[\/\\])[^\/\\]*$/, '$1');
 	}
 	return '';
-},
-compile = function(source, path, compress) {
-	var error = null,
-	result = null,
-	parser = new (window.less.Parser)({
+}, compile = function(source, path, compress) {
+	var error = null, result = null, parser = new (window.less.Parser)({
 		optimization : 3,
 		paths : [ basePath(path) ],
 		filename : path
