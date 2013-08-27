@@ -12,7 +12,8 @@ var basePath = function(path) {
 	var error = null, result = null, parser = new (window.less.Parser)({
 		optimization : 3,
 		paths : [ basePath(path) ],
-		filename : path
+		filename : path,
+		dumpLineNumbers : lessenv.lineNumbers
 	});
 	window.less.Parser.importer = function(path, currentFileInfo, callback, env) {
 		if (!/^\//.test(path) && !/^\w+:/.test(path)
@@ -26,7 +27,8 @@ var basePath = function(path) {
 				new (window.less.Parser)({
 					optimization : 3,
 					paths : [ basePath(path) ],
-					filename : path
+					filename : path,
+					dumpLineNumbers : lessenv.lineNumbers
 				}).parse(String(lessenv.loader.load(path, lessenv.charset)),
 						function(e, root) {
 							if (e != null)

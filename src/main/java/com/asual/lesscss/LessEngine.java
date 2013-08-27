@@ -100,6 +100,7 @@ public class LessEngine {
 			Scriptable lessEnv = (Scriptable) scope.get("lessenv", scope);
 			lessEnv.put("charset", lessEnv, options.getCharset());
 			lessEnv.put("css", lessEnv, options.isCss());
+			lessEnv.put("lineNumbers", lessEnv, options.getLineNumbers());
 			lessEnv.put("loader", lessEnv, Context.javaToJS(loader, scope));
 			cx.evaluateReader(scope, new InputStreamReader(less
 					.openConnection().getInputStream()), less.getFile(), 1,

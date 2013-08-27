@@ -9,9 +9,7 @@ var lessenv = {
 	getElementsByTagName : function(name) {
 		return [];
 	}
-}, window = {
-	less : {}
-};
+}, window = {};
 
 print = function() {};
 quit = function() {

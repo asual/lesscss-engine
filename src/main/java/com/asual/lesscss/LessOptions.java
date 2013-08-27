@@ -26,10 +26,16 @@ public class LessOptions {
 	public static final String CSS_OPTION = "css";
 	public static final String LESS_OPTION = "less";
 
+	public static final String LINE_NUMBERS_OPTION = "less";
+	public static final String LINE_NUMBERS_COMMENTS = "comments";
+	public static final String LINE_NUMBERS_MEDIA_QUERY = "mediaquery";
+	public static final String LINE_NUMBERS_ALL = "all";
+
 	private String charset;
 	private boolean compress;
 	private boolean css;
 	private URL less;
+	private String lineNumbers;
 
 	public String getCharset() {
 		if (charset == null) {
@@ -40,17 +46,6 @@ public class LessOptions {
 
 	public void setCharset(String charset) {
 		this.charset = charset;
-	}
-
-	public URL getLess() {
-		if (less == null) {
-			return getClass().getClassLoader().getResource("META-INF/less.js");
-		}
-		return less;
-	}
-
-	public void setLess(URL less) {
-		this.less = less;
 	}
 
 	public boolean isCss() {
@@ -67,5 +62,24 @@ public class LessOptions {
 
 	public void setCompress(boolean compress) {
 		this.compress = compress;
+	}
+
+	public URL getLess() {
+		if (less == null) {
+			return getClass().getClassLoader().getResource("META-INF/less.js");
+		}
+		return less;
+	}
+
+	public void setLess(URL less) {
+		this.less = less;
+	}
+
+	public String getLineNumbers() {
+		return lineNumbers;
+	}
+
+	public void setLineNumbers(String lineNumbers) {
+		this.lineNumbers = lineNumbers;
 	}
 }
