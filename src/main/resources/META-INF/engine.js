@@ -10,7 +10,7 @@ var basePath = function(path) {
 	return '';
 }, compile = function(source, path, compress) {
 	var error = null, result = null, parser = new (window.less.Parser)({
-		optimization : 3,
+		optimization : lessenv.optimization,
 		paths : [ basePath(path) ],
 		filename : path,
 		dumpLineNumbers : lessenv.lineNumbers
@@ -25,7 +25,7 @@ var basePath = function(path) {
 		if (path != null) {
 			try {
 				new (window.less.Parser)({
-					optimization : 3,
+					optimization : lessenv.optimization,
 					paths : [ basePath(path) ],
 					filename : path,
 					dumpLineNumbers : lessenv.lineNumbers

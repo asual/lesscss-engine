@@ -101,6 +101,7 @@ public class LessEngine {
 			lessEnv.put("charset", lessEnv, options.getCharset());
 			lessEnv.put("css", lessEnv, options.isCss());
 			lessEnv.put("lineNumbers", lessEnv, options.getLineNumbers());
+			lessEnv.put("optimization", lessEnv, options.getOptimization());
 			lessEnv.put("loader", lessEnv, Context.javaToJS(loader, scope));
 			cx.evaluateReader(scope, new InputStreamReader(less
 					.openConnection().getInputStream()), less.getFile(), 1,
