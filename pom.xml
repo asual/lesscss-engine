@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.asual.lesscss</groupId>
 	<artifactId>lesscss-engine</artifactId>
-	<version>1.4.2</version>
+	<version>1.5.0-SNAPSHOT</version>
 	<packaging>jar</packaging>
 	<name>LESS Engine</name>
 	<description>A Java wrapper for LESS (http://lesscss.org). LESS extends CSS with: variables, mixins, operations and nested rules.</description>
@@ -22,7 +22,7 @@
 		<url>http://github.com/asual/lesscss-engine</url>
 		<connection>scm:git:git://github.com:asual/lesscss-engine.git</connection>
 		<developerConnection>scm:git:git@github.com:asual/lesscss-engine.git</developerConnection>
-		<tag>lesscss-engine-1.4.2</tag>
+		<tag>HEAD</tag>
 	</scm>
 
 	<developers>
