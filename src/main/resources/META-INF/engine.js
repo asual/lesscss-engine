@@ -20,8 +20,6 @@ var basePath = function(path) {
 				&& currentFileInfo.currentDirectory) {
 			path = currentFileInfo.currentDirectory + path;
 		}
-		var sheetEnv = env.toSheet(path);
-		sheetEnv.currentFileInfo = currentFileInfo;
 		if (path != null) {
 			try {
 				new (window.less.Parser)({
