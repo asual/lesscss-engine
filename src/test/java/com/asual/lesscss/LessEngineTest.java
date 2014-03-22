@@ -130,7 +130,7 @@ public class LessEngineTest {
 	}
 
 	@Test
-	public void testImages() throws LessException {
+	public void testImages() throws LessException, IOException {
 		String expected = ".logo {\n  background-image: url(../img/logo.png);\n}\n";
 		assertEquals(expected, engine.compile(getResource("less/img.less")));
 	}
@@ -180,7 +180,7 @@ public class LessEngineTest {
 	}
 
 	@Test
-	public void testImportWithUrl() throws LessException {
+	public void testImportWithUrl() throws LessException, IOException {
 		String expected = "a {\n  color: #dddddd;\n  background-image: url(img/logo.png);\n}\n";
 		String result = engine
 				.compile(getResource("less/import-from-subdir.less"));
@@ -198,7 +198,7 @@ public class LessEngineTest {
 	}
 
 	@Test
-	public void testSample() throws LessException {
+	public void testSample() throws LessException, IOException {
 		String expected = ".box {\n  color: #fe33ac;\n"
 				+ "  border-color: #fdcdea;\n}\n.box div {\n"
 				+ "  box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);\n"
