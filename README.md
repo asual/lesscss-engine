@@ -22,3 +22,8 @@ compile URL resources:
     // Creates a new file containing the compiled content
     engine.compile(new File("/Users/User/Projects/styles.less"), 
                    new File("/Users/User/Projects/styles.css"));
+
+
+Build status
+------------
+[![Build Status](https://travis-ci.org/lenniboy/lesscss-engine.svg?branch=master)](https://travis-ci.org/lenniboy/lesscss-engine)
