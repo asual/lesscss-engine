@@ -21,7 +21,7 @@ public class RhinoCompiler implements LessCompiler {
 
 	private final Log logger = LogFactory.getLog(getClass());
 
-	public RhinoCompiler(LessOptions options, ResourceLoader loader, URL less, URL env, URL engine, URL cssmin) throws IOException {
+	public RhinoCompiler(LessOptions options, ResourceLoader loader, URL less, URL env, URL engine, URL cssmin, URL sourceMap) throws IOException {
 		Context cx = Context.enter();
 		logger.debug("Using implementation version: "
 				+ cx.getImplementationVersion());
@@ -29,6 +29,9 @@ public class RhinoCompiler implements LessCompiler {
 		Global global = new Global();
 		global.init(cx);
 		scope = cx.initStandardObjects(global);
+		cx.evaluateReader(scope, new InputStreamReader(sourceMap
+				.openConnection().getInputStream()), sourceMap.getFile(), 1,
+				null);
 		cx.evaluateReader(scope, new InputStreamReader(env.openConnection()
 				.getInputStream()), env.getFile(), 1, null);
 		Scriptable lessEnv = (Scriptable) scope.get("lessenv", scope);
@@ -36,6 +39,10 @@ public class RhinoCompiler implements LessCompiler {
 		lessEnv.put("css", lessEnv, options.isCss());
 		lessEnv.put("lineNumbers", lessEnv, options.getLineNumbers());
 		lessEnv.put("optimization", lessEnv, options.getOptimization());
+		lessEnv.put("sourceMap", lessEnv, options.isSourceMap());
+		lessEnv.put("sourceMapRootpath", lessEnv, options.getSourceMapRootpath());
+		lessEnv.put("sourceMapBasepath", lessEnv, options.getSourceMapBasepath());
+		lessEnv.put("sourceMapURL", lessEnv, options.getSourceMapUrl());
 		lessEnv.put("loader", lessEnv, Context.javaToJS(loader, scope));
 		cx.evaluateReader(scope, new InputStreamReader(less
 				.openConnection().getInputStream()), less.getFile(), 1,

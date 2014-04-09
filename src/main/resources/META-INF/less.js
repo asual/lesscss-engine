@@ -1,5 +1,5 @@
 /*! 
- * LESS - Leaner CSS v1.5.0 
+ * LESS - Leaner CSS v1.5.1 
  * http://lesscss.org 
  * 
  * Copyright (c) 2009-2013, Alexis Sellier <self@cloudhead.net> 
@@ -494,6 +494,7 @@ less.Parser = function Parser(env) {
                                     rootNode: evaldRoot,
                                     contentsMap: parser.imports.contents,
                                     sourceMapFilename: options.sourceMapFilename,
+                                    sourceMapURL: options.sourceMapURL,
                                     outputFilename: options.sourceMapOutputFilename,
                                     sourceMapBasepath: options.sourceMapBasepath,
                                     sourceMapRootpath: options.sourceMapRootpath,
@@ -511,7 +512,9 @@ less.Parser = function Parser(env) {
                     }
 
                     if (options.cleancss && less.mode === 'node') {
-                        return require('clean-css').process(css);
+                        var CleanCSS = require('clean-css');
+                        //TODO would be nice for no advanced to be an option
+                        return new CleanCSS({keepSpecialComments: '*', processImport: false, noRebase: true, noAdvanced: true}).minify(css);
                     } else if (options.compress) {
                         return css.replace(/(^(\s)+)|((\s)+$)/g, "");
                     } else {
@@ -4634,9 +4637,9 @@ tree.Ruleset.prototype = {
             if (rule !== self) {
                 for (var j = 0; j < rule.selectors.length; j++) {
                     if (match = selector.match(rule.selectors[j])) {
-                        if (selector.elements.length > rule.selectors[j].elements.length) {
+                        if (selector.elements.length > match) {
                             Array.prototype.push.apply(rules, rule.find(
-                                new(tree.Selector)(selector.elements.slice(1)), self));
+                                new(tree.Selector)(selector.elements.slice(match)), self));
                         } else {
                             rules.push(rule);
                         }
@@ -4962,15 +4965,15 @@ tree.Selector.prototype = {
         max = Math.min(len, olen);
 
         if (olen === 0 || len < olen) {
-            return false;
+            return 0;
         } else {
             for (i = 0; i < max; i++) {
                 if (elements[i].value !== oelements[i].value) {
-                    return false;
+                    return 0;
                 }
             }
         }
-        return true;
+        return max; // return number of matched selectors 
     },
     eval: function (env) {
         var evaldCondition = this.condition && this.condition.eval(env);
@@ -6129,6 +6132,7 @@ tree.Variable.prototype = {
         this._contentsMap = options.contentsMap;
         this._sourceMapFilename = options.sourceMapFilename;
         this._outputFilename = options.outputFilename;
+        this._sourceMapURL = options.sourceMapURL;
         this._sourceMapBasepath = options.sourceMapBasepath;
         this._sourceMapRootpath = options.sourceMapRootpath;
         this._outputSourceFiles = options.outputSourceFiles;
@@ -6214,21 +6218,23 @@ tree.Variable.prototype = {
         this._rootNode.genCSS(env, this);
 
         if (this._css.length > 0) {
-            var sourceMapFilename,
+            var sourceMapURL,
                 sourceMapContent = JSON.stringify(this._sourceMapGenerator.toJSON());
 
-            if (this._sourceMapFilename) {
-                sourceMapFilename = this.normalizeFilename(this._sourceMapFilename);
+            if (this._sourceMapURL) {
+                sourceMapURL = this._sourceMapURL;
+            } else if (this._sourceMapFilename) {
+                sourceMapURL = this.normalizeFilename(this._sourceMapFilename);
             }
 
             if (this._writeSourceMap) {
                 this._writeSourceMap(sourceMapContent);
             } else {
-                sourceMapFilename = "data:application/json," + encodeURIComponent(sourceMapContent);
+                sourceMapURL = "data:application/json," + encodeURIComponent(sourceMapContent);
             }
 
-            if (sourceMapFilename) {
-                this._css.push("/*# sourceMappingURL=" + sourceMapFilename + " */");
+            if (sourceMapURL) {
+                this._css.push("/*# sourceMappingURL=" + sourceMapURL + " */");
             }
         }
 
@@ -6247,7 +6253,8 @@ var isFileProtocol = /^(file|chrome(-extension)?|resource|qrc|app):/.test(locati
 less.env = less.env || (location.hostname == '127.0.0.1' ||
                         location.hostname == '0.0.0.0'   ||
                         location.hostname == 'localhost' ||
-                        location.port.length > 0         ||
+                        (location.port &&
+                          location.port.length > 0)      ||
                         isFileProtocol                   ? 'development'
                                                          : 'production');
 
@@ -6291,6 +6298,7 @@ if (dumpLineNumbers) {
 var typePattern = /^text\/(x-)?less$/;
 var cache = null;
 var fileCache = {};
+var varsPre = "";
 
 function log(str, level) {
     if (less.env == 'development' && typeof(console) !== 'undefined' && less.logLevel >= level) {
@@ -6533,9 +6541,15 @@ function loadStyles(newVars) {
             var env = new less.tree.parseEnv(less),
                 lessText = style.innerHTML || '';
             env.filename = document.location.href.replace(/#.*$/, '');
-            if (newVars) {
+
+            if (newVars || varsPre) {
                 env.useFileCache = true;
-                lessText += "\n" + newVars;
+
+                lessText = varsPre + lessText;
+
+                if (newVars) {
+                    lessText += "\n" + newVars;
+                }
             }
 
             /*jshint loopfunc:true */
@@ -6738,6 +6752,8 @@ function loadFile(originalHref, currentFileInfo, callback, env, newVars) {
     }
 
     doXHR(href, env.mime, function (data, lastModified) {
+        data = varsPre + data;
+
         // per file cache
         fileCache[href] = data;
 
@@ -6757,7 +6773,7 @@ function loadStyleSheet(sheet, callback, reload, remaining, newVars) {
     var env = new less.tree.parseEnv(less);
     env.mime = sheet.type;
 
-    if (newVars) {
+    if (newVars || varsPre) {
         env.useFileCache = true;
     }
 
@@ -6824,6 +6840,18 @@ function initRunningMode(){
     }
 }
 
+function serializeVars(vars) {
+    var s = "";
+
+    for (var name in vars) {
+        s += ((name.slice(0,1) === '@')? '' : '@') + name +': '+
+                ((vars[name].slice(-1) === ';')? vars[name] : vars[name] +';');
+    }
+
+    return s;
+}
+
+
 //
 // Watch mode
 //
@@ -6866,12 +6894,7 @@ for (var i = 0; i < links.length; i++) {
 // CSS without reloading less-files
 //
 less.modifyVars = function(record) {
-    var newVars = "";
-    for (var name in record) {
-        newVars += ((name.slice(0,1) === '@')? '' : '@') + name +': '+
-                ((record[name].slice(-1) === ';')? record[name] : record[name] +';');
-    }
-    less.refresh(false, newVars);
+    less.refresh(false, serializeVars(record));
 };
 
 less.refresh = function (reload, newVars) {
@@ -6897,6 +6920,10 @@ less.refresh = function (reload, newVars) {
 
     loadStyles(newVars);
 };
+
+if (less.globalVars) {
+    varsPre = serializeVars(less.globalVars) + "\n";
+}
 
 less.refreshStyles = loadStyles;
 

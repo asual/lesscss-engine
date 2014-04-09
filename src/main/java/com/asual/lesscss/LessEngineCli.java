@@ -44,6 +44,16 @@ public class LessEngineCli {
 				"Flag that enables compilation of .css files.");
 		cmdOptions.addOption(LessOptions.LESS_OPTION, true,
 				"Path to a custom less.js for Rhino version.");
+		cmdOptions.addOption(LessOptions.LINE_NUMBERS_OPTION, true,
+				"Dump line numbers ( comments | mediaquery | all ).");
+		cmdOptions.addOption(LessOptions.SOURCE_MAP, true,
+				"Flag that enables the generation of a source map.");
+		cmdOptions.addOption(LessOptions.SOURCE_MAP_ROOTPATH, true,
+				"Source map root path.");
+		cmdOptions.addOption(LessOptions.SOURCE_MAP_BASEPATH, true,
+				"Source map base path.");
+		cmdOptions.addOption(LessOptions.SOURCE_MAP_URL, true,
+				"Source map URL.");
 		try {
 			CommandLineParser cmdParser = new GnuParser();
 			CommandLine cmdLine = cmdParser.parse(cmdOptions, args);
@@ -62,6 +72,21 @@ public class LessEngineCli {
 				options.setLess(new File(cmdLine
 						.getOptionValue(LessOptions.LESS_OPTION)).toURI()
 						.toURL());
+			}
+			if (cmdLine.hasOption(LessOptions.LINE_NUMBERS_OPTION)) {
+				options.setLineNumbers(cmdLine.getOptionValue(LessOptions.LINE_NUMBERS_OPTION));
+			}
+			if (cmdLine.hasOption(LessOptions.SOURCE_MAP)) {
+				options.setSourceMap(true);
+			}
+			if (cmdLine.hasOption(LessOptions.SOURCE_MAP_ROOTPATH)) {
+				options.setSourceMapRootpath(cmdLine.getOptionValue(LessOptions.SOURCE_MAP_ROOTPATH));
+			}
+			if (cmdLine.hasOption(LessOptions.SOURCE_MAP_BASEPATH)) {
+				options.setSourceMapBasepath(cmdLine.getOptionValue(LessOptions.SOURCE_MAP_BASEPATH));
+			}
+			if (cmdLine.hasOption(LessOptions.SOURCE_MAP_URL)) {
+				options.setSourceMapUrl(cmdLine.getOptionValue(LessOptions.SOURCE_MAP_URL));
 			}
 			LessEngine engine = new LessEngine(options);
 			if (System.in.available() != 0) {

@@ -13,7 +13,13 @@ var basePath = function(path) {
 		optimization : lessenv.optimization,
 		paths : [ basePath(path) ],
 		filename : path,
-		dumpLineNumbers : lessenv.lineNumbers
+		dumpLineNumbers : lessenv.lineNumbers,
+		sourceMap: lessenv.sourceMap,
+		sourceMapBasepath : lessenv.sourceMapBasepath,
+		sourceMapRootpath : lessenv.sourceMapRootpath,
+		sourceMapURL : lessenv.sourceMapURL,
+		sourceMapGenerator : lessenv.sourceMapGenerator,
+		writeSourceMap: lessenv.sourceMapURL ? lessenv.writeSourceMap : null
 	});
 	window.less.Parser.importer = function(path, currentFileInfo, callback, env) {
 		if (!/^\//.test(path) && !/^\w+:/.test(path)
@@ -26,7 +32,13 @@ var basePath = function(path) {
 					optimization : lessenv.optimization,
 					paths : [ basePath(path) ],
 					filename : path,
-					dumpLineNumbers : lessenv.lineNumbers
+					dumpLineNumbers : lessenv.lineNumbers,
+					sourceMap: lessenv.sourceMap,
+					sourceMapBasepath : lessenv.sourceMapBasepath,
+					sourceMapRootpath : lessenv.sourceMapRootpath,
+					sourceMapURL : lessenv.sourceMapURL,
+					sourceMapGenerator : lessenv.sourceMapGenerator,
+					writeSourceMap: lessenv.sourceMapURL ? lessenv.writeSourceMap : null
 				}).parse(String(lessenv.loader.load(path, lessenv.charset)),
 						function(e, root) {
 							if (e != null)
@@ -42,7 +54,14 @@ var basePath = function(path) {
 	parser.parse(source, function(e, root) {
 		if (e != null)
 			throw e;
-		result = root.toCSS();
+		result = root.toCSS({
+			sourceMap: lessenv.sourceMap,
+			sourceMapBasepath : lessenv.sourceMapBasepath,
+			sourceMapRootpath : lessenv.sourceMapRootpath,
+			sourceMapURL : lessenv.sourceMapURL,
+			sourceMapGenerator : lessenv.sourceMapGenerator,
+			writeSourceMap: lessenv.sourceMapURL ? lessenv.writeSourceMap : null
+		});
 		if (compress)
 			result = exports.compressor.cssmin(result);
 	});

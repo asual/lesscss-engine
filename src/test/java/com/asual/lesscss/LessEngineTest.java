@@ -89,17 +89,7 @@ public class LessEngineTest {
 		File tempFile = File.createTempFile("classpath.less", null, tempDir);
 		engine.compile(new File(getResource("less/classpath.less").getPath()),
 				new File(tempFile.getAbsolutePath()));
-		FileInputStream fstream = new FileInputStream(
-				tempFile.getAbsolutePath());
-		DataInputStream in = new DataInputStream(fstream);
-		BufferedReader br = new BufferedReader(new InputStreamReader(in));
-		String strLine;
-		StringBuilder sb = new StringBuilder();
-		while ((strLine = br.readLine()) != null) {
-			sb.append(strLine);
-		}
-		in.close();
-		assertEquals("body {  color: #f0f0f0;}", sb.toString());
+		assertEquals("body {  color: #f0f0f0;}", getContent(tempFile));
 		tempFile.delete();
 	}
 
@@ -147,11 +137,8 @@ public class LessEngineTest {
 		try {
 			engine.compile(getResource("less/name-error.less"));
 		} catch (LessException e) {
-			assertTrue(
-					"Name Error",
-					e.getMessage()
-							.contains(
-									"Name Error: .bgColor is undefined (line 2, column 4)"));
+			assertTrue("Name Error", e.getMessage().contains(
+					"Name Error: .bgColor is undefined (line 2, column 4)"));
 			throw e;
 		}
 	}
@@ -219,8 +206,45 @@ public class LessEngineTest {
 						.substring(0, 9));
 	}
 
+	@Test
+	public void testSourceMap() throws LessException {
+		LessOptions options = new LessOptions();
+		options.setSourceMap(true);
+		LessEngine engine = new LessEngine(options);
+		assertEquals("div {\n  width: 2;\n}\n/*# sourceMappingURL=data:application/json,%7B%22version%22%3A3%2C%22sources%22%3A%5B%22input%22%5D%2C%22names%22%3A%5B%5D%2C%22mappings%22%3A%22AAAI%3BEAAE%2CQAAA%22%7D */",
+				engine.compile("div { width: 1 + 1 }"));
+	}
+
+	@Test
+	public void testSourceMapUrl() throws LessException, IOException {
+		String sourceMapUrl = "test.map.css";
+		LessOptions options = new LessOptions();
+		options.setSourceMap(true);
+		options.setSourceMapUrl(sourceMapUrl);
+		LessEngine engine = new LessEngine(options);
+		assertEquals("div {\n  width: 2;\n}\n/*# sourceMappingURL=" + sourceMapUrl + " */",
+				engine.compile("div { width: 1 + 1 }"));
+		File file = new File(sourceMapUrl);
+		assertEquals("{\"version\":3,\"sources\":[\"input\"],\"names\":[],\"mappings\":\"AAAI;EAAE,QAAA\"}",
+				getContent(file));
+		file.delete();
+	}
+
 	private URL getResource(String path) {
 		return getClass().getClassLoader().getResource("META-INF/" + path);
 	}
 
+	private String getContent(File file) throws IOException {
+		FileInputStream fstream = new FileInputStream(
+				file.getAbsolutePath());
+		DataInputStream in = new DataInputStream(fstream);
+		BufferedReader br = new BufferedReader(new InputStreamReader(in));
+		String strLine;
+		StringBuilder sb = new StringBuilder();
+		while ((strLine = br.readLine()) != null) {
+			sb.append(strLine);
+		}
+		in.close();
+		return sb.toString();
+	}
 }

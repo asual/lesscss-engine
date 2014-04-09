@@ -71,7 +71,8 @@ public class LessEngine {
 			URL env = classLoader.getResource("META-INF/env.js");
 			URL engine = classLoader.getResource("META-INF/engine.js");
 			URL cssmin = classLoader.getResource("META-INF/cssmin.js");
-			compiler = new RhinoCompiler(options, loader, less, env, engine, cssmin);
+			URL sourceMap = classLoader.getResource("META-INF/source-map.js");
+			compiler = new RhinoCompiler(options, loader, less, env, engine, cssmin, sourceMap);
 			Context.exit();
 		} catch (Exception e) {
 			logger.error("LESS Engine intialization failed.", e);
@@ -87,12 +88,12 @@ public class LessEngine {
 	}
 
 	public String compile(String input, String location, boolean compress)
-			throws LessException {
-			long time = System.currentTimeMillis();
-			String result = compiler.compile(input, location == null ? "" : location, compress);
-			logger.debug("The compilation of '" + input + "' took "
-					+ (System.currentTimeMillis() - time) + " ms.");
-			return result;
+		throws LessException {
+		long time = System.currentTimeMillis();
+		String result = compiler.compile(input, location == null ? "" : location, compress);
+		logger.debug("The compilation of '" + input + "' took "
+				+ (System.currentTimeMillis() - time) + " ms.");
+		return result;
 	}
 
 	public String compile(URL input) throws LessException, IOException {
@@ -141,8 +142,5 @@ public class LessEngine {
 		bw.write(content);
 		bw.close();
 	}
-
-
-
 
 }
