@@ -46,6 +46,7 @@ public class LessOptions {
 	private String sourceMapRootpath;
 	private String sourceMapBasepath;
 	private String sourceMapUrl;
+	private String[] paths;
 
 	public String getCharset() {
 		return charset;
@@ -125,6 +126,14 @@ public class LessOptions {
 
 	public void setSourceMapUrl(String sourceMapUrl) {
 		this.sourceMapUrl = sourceMapUrl;
+	}
+
+	public String[] getPaths() {
+		return paths;
+	}
+
+	public void setPaths(String ... paths) {
+		this.paths = paths;
 	}
 
 }

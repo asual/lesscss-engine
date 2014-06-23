@@ -38,18 +38,18 @@ public class CssProcessingResourceLoader implements ResourceLoader {
 	}
 
 	@Override
-	public boolean exists(String path) throws IOException {
-		return delegate.exists(path)
-				|| delegate.exists(path.replaceFirst("\\.less$", ".css"));
+	public boolean exists(String resource, String[] paths) throws IOException {
+		return delegate.exists(resource, paths)
+				|| delegate.exists(resource.replaceFirst("\\.less$", ".css"), paths);
 	}
 
 	@Override
-	public String load(String path, String charset) throws IOException {
+	public String load(String resource, String[] paths, String charset) throws IOException {
 		String content;
-		if (delegate.exists(path)) {
-			content = delegate.load(path, charset);
+		if (delegate.exists(resource, paths)) {
+			content = delegate.load(resource, paths, charset);
 		} else {
-			content = delegate.load(path.replaceFirst("\\.less$", ".css"),
+			content = delegate.load(resource.replaceFirst("\\.less$", ".css"), paths,
 					charset);
 		}
 		return content.replaceAll("\\.css", ".less");

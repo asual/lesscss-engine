@@ -44,6 +44,10 @@ public class RhinoCompiler implements LessCompiler {
 		lessEnv.put("sourceMapBasepath", lessEnv, options.getSourceMapBasepath());
 		lessEnv.put("sourceMapURL", lessEnv, options.getSourceMapUrl());
 		lessEnv.put("loader", lessEnv, Context.javaToJS(loader, scope));
+		if(options.getPaths() != null) {
+			NativeArray nativeArray = new NativeArray(options.getPaths());
+			lessEnv.put("paths", lessEnv, nativeArray);
+		}
 		cx.evaluateReader(scope, new InputStreamReader(less
 				.openConnection().getInputStream()), less.getFile(), 1,
 				null);

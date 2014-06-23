@@ -58,36 +58,71 @@ public abstract class StreamResourceLoader implements ResourceLoader {
 	protected abstract InputStream openStream(String path) throws IOException;
 
 	@Override
-	public boolean exists(String path) throws IOException {
-		Matcher m = PATTERN.matcher(path);
-		if (m.matches()) {
-			if (m.group(1).equals(getSchema())) {
-				return exists(m.group(2));
+	public boolean exists(String resource, String[] paths) throws IOException {
+		for(String path : paths) {
+			String pathToResource = appendPathToResource(path, resource);
+			Matcher m = PATTERN.matcher(resource);
+			if (m.matches()) {
+				if (m.group(1).equals(getSchema())) {
+					pathToResource = m.group(2);
+				} else {
+					return false;
+				}
+			} else {
+				m = PATTERN.matcher(pathToResource);
+				if (m.matches()) {
+					if (m.group(1).equals(getSchema())) {
+						pathToResource = m.group(2);
+					} else {
+						return false;
+					}
+				}				
 			}
-			return false;
-		}
-		InputStream stream = openStream(path);
-		if (stream != null) {
-			stream.close();
-			return true;
+			InputStream stream = openStream(pathToResource);
+			if (stream != null) {
+				stream.close();
+				return true;
+			}
 		}
 		return false;
 	}
 
 	@Override
-	public String load(String path, String charset) throws IOException {
-		Matcher m = PATTERN.matcher(path);
-		if (m.matches()) {
-			if (m.group(1).equals(getSchema())) {
-				return load(m.group(2), charset);
+	public String load(String resource, String[] paths, String charset) throws IOException {
+		for(String path : paths) {
+			String pathToResource = appendPathToResource(path, resource);
+			Matcher m = PATTERN.matcher(resource);
+			if (m.matches()) {
+				if (m.group(1).equals(getSchema())) {
+					pathToResource = m.group(2);
+				} else {
+					throw new IOException("Invalid stream type for provided path " + resource);
+				}
+			} else {
+				m = PATTERN.matcher(pathToResource);
+				if (m.matches()) {
+					if (m.group(1).equals(getSchema())) {
+						pathToResource = m.group(2);
+					} else {
+						throw new IOException("Invalid stream type for provided path " + resource);
+					}
+				}				
 			}
-			throw new IOException("No such file " + path);
+			InputStream is = openStream(pathToResource);
+			if (is != null) {
+				String readStream = readStream(is, charset);
+				return readStream;
+			}
 		}
-		InputStream is = openStream(path);
-		if (is != null) {
-			return readStream(is, charset);
+		throw new IOException("No such file " + resource);
+	}
+	
+	private String appendPathToResource(String path, String resource) {
+		if(path.length() > 0 && path.charAt(path.length() - 1) != '/') {
+			return path + "/" + resource;
+		} else {
+			return path + resource;
 		}
-		throw new IOException("No such file " + path);
 	}
 
 	protected String readStream(InputStream is, String charset)

@@ -1,0 +1,25 @@
+*.class
+
+# Package Files #
+*.war
+*.ear
+*.Demo*.java
+*.log
+
+/.cache
+/.target
+logs
+project/project
+project/target
+target
+tmp
+.history
+dist
+/.idea
+/*.iml
+/out
+/.idea_modules
+/.classpath
+/.project
+/RUNNING_PID
+/.settings
