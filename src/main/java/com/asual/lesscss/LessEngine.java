@@ -119,6 +119,21 @@ public class LessEngine {
 				+ (System.currentTimeMillis() - time) + " ms.");
 		return result;
 	}
+	
+	public String compile(ResourceLocation location) throws LessException, IOException {
+		return compile(location, false);
+	}
+	
+	public String compile(ResourceLocation input, boolean compress) throws LessException, IOException {
+		long time = System.currentTimeMillis();
+		String location = input.getLocation();
+		logger.debug("Compiling URL: " + location);
+		String source = loader.load(location, getPaths(location), options.getCharset());
+		String result = compiler.compile(source, location, compress);
+		logger.debug("The compilation of '" + input + "' took "
+				+ (System.currentTimeMillis() - time) + " ms.");
+		return result;
+	}
 
 	public String compile(File input) throws LessException, IOException {
 		return compile(input, false);
