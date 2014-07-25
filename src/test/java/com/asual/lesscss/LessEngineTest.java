@@ -208,7 +208,7 @@ public class LessEngineTest {
 	}
 
 	@Test
-	public void testConfigPaths() throws LessException, IOException {
+	public void testConfiguredImportPaths() throws LessException, IOException {
 		LessOptions options = new LessOptions();
 		options.setPaths(getResource("less2").toString() + "/");
 		LessEngine pathEngine = new LessEngine(options);
@@ -216,12 +216,12 @@ public class LessEngineTest {
 				+ "  background-image: url(img/logo.png);\n}\n"
 				+ "p {\n  color: #555555;\n}\n"
 				+ "h2 {\n  font-size: 20px;\n}\n";
-		String compiledLess = pathEngine.compile(getResource("less/import-from-paths.less"));
+		String compiledLess = pathEngine.compile(getResource("less/import-from-multi-paths.less"));
 		assertEquals(expected, compiledLess);
 		
-		options.setPaths(new File(getResource("less2").getPath()).getAbsolutePath() + File.separatorChar);
+		options.setPaths(new File(getResource("less2").getPath()).getAbsolutePath());
 		pathEngine = new LessEngine(options);
-		compiledLess = pathEngine.compile(getResource("less/import-from-paths.less"));
+		compiledLess = pathEngine.compile(getResource("less/import-from-multi-paths.less"));
 		assertEquals(expected, compiledLess);
 	}
 	
