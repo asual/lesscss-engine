@@ -62,15 +62,17 @@ public abstract class StreamResourceLoader implements ResourceLoader {
 	@Override
 	public boolean exists(String resource, String[] paths) throws IOException {
 		// check if the resource imported absolutely under this schema
-		String pathToResource = getSchemaLessPath(resource, true, false);
+		String pathToResource = getSchemalessPath(resource, true, false);
 		if(pathToResource != null && exists(pathToResource)) {
 			return true;
 		}
-		// check if resource imported relative to any of the configured import paths
-		for(String path : paths) {
-			pathToResource = getSchemaLessPath(appendPathToResource(path, resource), false, false);
-			if(pathToResource != null && exists(pathToResource)) {
-				return true;
+		// if this is a relative resource path check if resource imported relative to any of the configured import paths
+		if(!getSchemaMatcher(resource).matches()) {
+			for(String path : paths) {
+				pathToResource = getSchemalessPath(appendPathToResource(path, resource), false, false);
+				if(pathToResource != null && exists(pathToResource)) {
+					return true;
+				}
 			}
 		}
 		return false;
@@ -79,15 +81,18 @@ public abstract class StreamResourceLoader implements ResourceLoader {
 	@Override
 	public String load(String resource, String[] paths, String charset) throws IOException {
 		// check if the resource imported absolutely under this schema
-		String content = load(getSchemaLessPath(resource, true, true), charset);
+		String content = load(getSchemalessPath(resource, true, true), charset);
 		if(content != null) {
 			return content;
 		}
-		// check if resource imported relative to any of the configured import paths
-		for(String path : paths) {
-			content = load(getSchemaLessPath(appendPathToResource(path, resource), false, true), charset);
-			if(content != null) {
-				return content;
+		// if this is a relative resource path check if resource imported relative to any of the configured import paths
+		if(!getSchemaMatcher(resource).matches()) {
+			// check if resource imported relative to any of the configured import paths
+			for(String path : paths) {
+				content = load(getSchemalessPath(appendPathToResource(path, resource), false, true), charset);
+				if(content != null) {
+					return content;
+				}
 			}
 		}
 		throw new IOException("No such file " + resource);
@@ -104,8 +109,8 @@ public abstract class StreamResourceLoader implements ResourceLoader {
 		return null;
 	}
 	
-	private @Nullable String getSchemaLessPath(String resourcePath, boolean matchOnSchemaOnly, boolean failOnInvalidSchema) throws IOException {
-		Matcher m = PATTERN.matcher(resourcePath);
+	private @Nullable String getSchemalessPath(String resourcePath, boolean matchOnSchemaOnly, boolean failOnInvalidSchema) throws IOException {
+		Matcher m = getSchemaMatcher(resourcePath);
 		if (m.matches()) {
 			if (m.group(1).equals(getSchema())) {
 				return m.group(2);
@@ -120,6 +125,10 @@ public abstract class StreamResourceLoader implements ResourceLoader {
 			return null;
 		}
 		return resourcePath;
+	}
+	
+	private @Nullable Matcher getSchemaMatcher(String resourcePath) {
+		return PATTERN.matcher(resourcePath);
 	}
 	
 	private boolean exists(String resourcePath) throws IOException {

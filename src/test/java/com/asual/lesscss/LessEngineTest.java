@@ -210,7 +210,7 @@ public class LessEngineTest {
 	@Test
 	public void testConfiguredImportPaths() throws LessException, IOException {
 		LessOptions options = new LessOptions();
-		options.setPaths(getResource("less2").toString() + "/");
+		options.setPaths(getResource("less2").toString());
 		LessEngine pathEngine = new LessEngine(options);
 		String expected = "a {\n  color: #dddddd;\n"
 				+ "  background-image: url(img/logo.png);\n}\n"
