@@ -105,8 +105,9 @@ public class LessEngineTest {
 				+ "  border-radius: 10px;\n"
 				+ "  -webkit-border-radius: 10px;\n"
 				+ "  -moz-border-radius: 10px;\n}\n";
+		String compile = engine.compile(getResource("css/multiple-imports.css"));
 		assertEquals(expected,
-				engine.compile(getResource("css/multiple-imports.css")));
+				compile);
 	}
 
 	@Test
@@ -206,6 +207,24 @@ public class LessEngineTest {
 						.substring(0, 9));
 	}
 
+	@Test
+	public void testConfiguredImportPaths() throws LessException, IOException {
+		LessOptions options = new LessOptions();
+		options.setPaths(getResource("less2").toString());
+		LessEngine pathEngine = new LessEngine(options);
+		String expected = "a {\n  color: #dddddd;\n"
+				+ "  background-image: url(img/logo.png);\n}\n"
+				+ "p {\n  color: #555555;\n}\n"
+				+ "h2 {\n  font-size: 20px;\n}\n";
+		String compiledLess = pathEngine.compile(getResource("less/import-from-multi-paths.less"));
+		assertEquals(expected, compiledLess);
+		
+		options.setPaths(new File(getResource("less2").getPath()).getAbsolutePath());
+		pathEngine = new LessEngine(options);
+		compiledLess = pathEngine.compile(getResource("less/import-from-multi-paths.less"));
+		assertEquals(expected, compiledLess);
+	}
+	
 	@Test
 	public void testSourceMap() throws LessException {
 		LessOptions options = new LessOptions();

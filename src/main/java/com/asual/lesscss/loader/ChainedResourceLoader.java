@@ -41,9 +41,9 @@ public class ChainedResourceLoader implements ResourceLoader {
 	 * {@link #exists(String)} for the given path.
 	 */
 	@Override
-	public boolean exists(String path) throws IOException {
+	public boolean exists(String resource, String[] paths) throws IOException {
 		for (ResourceLoader loader : loaders) {
-			if (loader.exists(path)) {
+			if (loader.exists(resource, paths)) {
 				return true;
 			}
 		}
@@ -56,13 +56,13 @@ public class ChainedResourceLoader implements ResourceLoader {
 	 * result will be retured.
 	 */
 	@Override
-	public String load(String path, String charset) throws IOException {
+	public String load(String resource, String[] paths, String charset) throws IOException {
 		for (ResourceLoader loader : loaders) {
-			if (loader.exists(path)) {
-				return loader.load(path, charset);
+			if (loader.exists(resource, paths)) {
+				return loader.load(resource, paths, charset);
 			}
 		}
-		throw new IOException("No such file " + path);
+		throw new IOException("No such file " + resource);
 	}
 
 }

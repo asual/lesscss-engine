@@ -31,12 +31,12 @@ public class UnixNewlinesResourceLoader implements ResourceLoader {
 	}
 
 	@Override
-	public boolean exists(String path) throws IOException {
-		return delegate.exists(path);
+	public boolean exists(String resource, String[] paths) throws IOException {
+		return delegate.exists(resource, paths);
 	}
 
 	@Override
-	public String load(String path, String charset) throws IOException {
-		return delegate.load(path, charset).replaceAll("\r", "");
+	public String load(String resource, String[] paths, String charset) throws IOException {
+		return delegate.load(resource, paths, charset).replaceAll("\r", "");
 	}
 }

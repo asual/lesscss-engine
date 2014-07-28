@@ -14,18 +14,27 @@
 
 package com.asual.lesscss;
 
-import com.asual.lesscss.compiler.LessCompiler;
-import com.asual.lesscss.compiler.RhinoCompiler;
-import com.asual.lesscss.loader.*;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.mozilla.javascript.Context;
-
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URL;
+import java.util.Arrays;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.mozilla.javascript.Context;
+
+import com.asual.lesscss.compiler.LessCompiler;
+import com.asual.lesscss.compiler.RhinoCompiler;
+import com.asual.lesscss.loader.ChainedResourceLoader;
+import com.asual.lesscss.loader.ClasspathResourceLoader;
+import com.asual.lesscss.loader.CssProcessingResourceLoader;
+import com.asual.lesscss.loader.FilesystemResourceLoader;
+import com.asual.lesscss.loader.HTTPResourceLoader;
+import com.asual.lesscss.loader.JNDIResourceLoader;
+import com.asual.lesscss.loader.ResourceLoader;
+import com.asual.lesscss.loader.UnixNewlinesResourceLoader;
 
 /**
  * @author Rostislav Hristov
@@ -104,13 +113,13 @@ public class LessEngine {
 		long time = System.currentTimeMillis();
 		String location = input.toString();
 		logger.debug("Compiling URL: " + location);
-		String source = loader.load(location, options.getCharset());
+		String source = loader.load(getFile(location), getPaths(location), options.getCharset());
 		String result = compiler.compile(source, location, compress);
 		logger.debug("The compilation of '" + input + "' took "
 				+ (System.currentTimeMillis() - time) + " ms.");
 		return result;
 	}
-
+	
 	public String compile(File input) throws LessException, IOException {
 		return compile(input, false);
 	}
@@ -120,13 +129,13 @@ public class LessEngine {
 		String location = input.getAbsolutePath();
 		logger.debug("Compiling File: " + "file:" + location);
 		String source = null;
-		source = loader.load(location, options.getCharset());
+		source = loader.load(getFile(location), getPaths(location), options.getCharset());
 		String result = compiler.compile(source, location, compress);
 		logger.debug("The compilation of '" + input + "' took "
 				+ (System.currentTimeMillis() - time) + " ms.");
 		return result;
 	}
-
+	
 	public void compile(File input, File output) throws LessException,
 			IOException {
 		compile(input, output, false);
@@ -143,4 +152,23 @@ public class LessEngine {
 		bw.close();
 	}
 
+	private String[] getPaths(String currentFile) {
+		String[] paths;
+		if(options.getPaths() != null) {
+			paths = Arrays.copyOf(options.getPaths(), options.getPaths().length + 1);
+		} else {
+			paths = new String[1];
+		}
+		String currentPath = currentFile.replaceAll("^(.*[\\/\\\\])[^\\/\\\\]*$", "$1");
+		paths[paths.length - 1] = currentPath;
+		for(int i = 0; i < paths.length; i++) {
+			paths[i] = paths[i].replace('\\', '/');
+		}
+		return paths;
+	}
+	
+	private String getFile(String currentFile) {
+		String file = currentFile.replaceAll("^(.*[\\/\\\\])([^\\/\\\\]*)$", "$2");
+		return file;
+	}
 }

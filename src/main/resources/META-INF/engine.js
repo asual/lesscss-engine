@@ -21,17 +21,26 @@ var basePath = function(path) {
 		sourceMapGenerator : lessenv.sourceMapGenerator,
 		writeSourceMap: lessenv.sourceMapURL ? lessenv.writeSourceMap : null
 	});
+	
 	window.less.Parser.importer = function(path, currentFileInfo, callback, env) {
+		var fullpath = path;
 		if (!/^\//.test(path) && !/^\w+:/.test(path)
 				&& currentFileInfo.currentDirectory) {
-			path = currentFileInfo.currentDirectory + path;
+			fullpath = currentFileInfo.currentDirectory + path;
 		}
-		if (path != null) {
+		var searchpaths = [];
+		if(lessenv.paths) {
+			for(var i = 0; i < lessenv.paths.length; i++) {
+				searchpaths.push(lessenv.paths[i]);
+			}
+		}
+		searchpaths.push(currentFileInfo.currentDirectory);
+		if (fullpath != null) {
 			try {
 				new (window.less.Parser)({
 					optimization : lessenv.optimization,
-					paths : [ basePath(path) ],
-					filename : path,
+					paths : [ basePath(fullpath) ],
+					filename : fullpath,
 					dumpLineNumbers : lessenv.lineNumbers,
 					sourceMap: lessenv.sourceMap,
 					sourceMapBasepath : lessenv.sourceMapBasepath,
@@ -39,11 +48,11 @@ var basePath = function(path) {
 					sourceMapURL : lessenv.sourceMapURL,
 					sourceMapGenerator : lessenv.sourceMapGenerator,
 					writeSourceMap: lessenv.sourceMapURL ? lessenv.writeSourceMap : null
-				}).parse(String(lessenv.loader.load(path, lessenv.charset)),
+				}).parse(String(lessenv.loader.load(path, searchpaths, lessenv.charset)),
 						function(e, root) {
 							if (e != null)
 								throw e;
-							callback(e, root, path);
+							callback(e, root, fullpath);
 						});
 			} catch (e) {
 				error = e;

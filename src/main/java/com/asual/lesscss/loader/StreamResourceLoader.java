@@ -22,6 +22,8 @@ import java.io.StringWriter;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.sun.istack.internal.Nullable;
+
 /**
  * A base class for loader implementations.
  * 
@@ -58,36 +60,92 @@ public abstract class StreamResourceLoader implements ResourceLoader {
 	protected abstract InputStream openStream(String path) throws IOException;
 
 	@Override
-	public boolean exists(String path) throws IOException {
-		Matcher m = PATTERN.matcher(path);
+	public boolean exists(String resource, String[] paths) throws IOException {
+		// check if the resource imported absolutely under this schema
+		String pathToResource = getSchemalessPath(resource, true, false);
+		if(pathToResource != null && exists(pathToResource)) {
+			return true;
+		}
+		// if this is a relative resource path check if resource imported relative to any of the configured import paths
+		if(!getSchemaMatcher(resource).matches()) {
+			for(String path : paths) {
+				pathToResource = getSchemalessPath(appendPathToResource(path, resource), false, false);
+				if(pathToResource != null && exists(pathToResource)) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+	
+	@Override
+	public String load(String resource, String[] paths, String charset) throws IOException {
+		// check if the resource imported absolutely under this schema
+		String content = load(getSchemalessPath(resource, true, true), charset);
+		if(content != null) {
+			return content;
+		}
+		// if this is a relative resource path check if resource imported relative to any of the configured import paths
+		if(!getSchemaMatcher(resource).matches()) {
+			// check if resource imported relative to any of the configured import paths
+			for(String path : paths) {
+				content = load(getSchemalessPath(appendPathToResource(path, resource), false, true), charset);
+				if(content != null) {
+					return content;
+				}
+			}
+		}
+		throw new IOException("No such file " + resource);
+	}
+	
+	private @Nullable String load(@Nullable String resourcePath, String charset) throws IOException {
+		if(resourcePath != null) {
+			InputStream is = openStream(resourcePath);
+			if (is != null) {
+				String readStream = readStream(is, charset);
+				return readStream;
+			}
+		}
+		return null;
+	}
+	
+	private @Nullable String getSchemalessPath(String resourcePath, boolean matchOnSchemaOnly, boolean failOnInvalidSchema) throws IOException {
+		Matcher m = getSchemaMatcher(resourcePath);
 		if (m.matches()) {
 			if (m.group(1).equals(getSchema())) {
-				return exists(m.group(2));
+				return m.group(2);
+			} else {
+				if(failOnInvalidSchema) {
+					throw new IOException("Invalid stream type for provided path " + resourcePath);
+				}
+				return null;
 			}
-			return false;
 		}
-		InputStream stream = openStream(path);
+		if(matchOnSchemaOnly) {
+			return null;
+		}
+		return resourcePath;
+	}
+	
+	private @Nullable Matcher getSchemaMatcher(String resourcePath) {
+		return PATTERN.matcher(resourcePath);
+	}
+	
+	private boolean exists(String resourcePath) throws IOException {
+		InputStream stream = openStream(resourcePath);
 		if (stream != null) {
 			stream.close();
 			return true;
 		}
 		return false;
 	}
-
-	@Override
-	public String load(String path, String charset) throws IOException {
-		Matcher m = PATTERN.matcher(path);
-		if (m.matches()) {
-			if (m.group(1).equals(getSchema())) {
-				return load(m.group(2), charset);
-			}
-			throw new IOException("No such file " + path);
+	
+	private String appendPathToResource(String path, String resource) {
+		if(path.length() > 0 && path.charAt(path.length() - 1) != '/') {
+			return path + "/" + resource;
+		} else {
+			return path + resource;
 		}
-		InputStream is = openStream(path);
-		if (is != null) {
-			return readStream(is, charset);
-		}
-		throw new IOException("No such file " + path);
 	}
 
 	protected String readStream(InputStream is, String charset)

@@ -27,19 +27,23 @@ public interface ResourceLoader {
 	/**
 	 * Checks if the given resource exists.
 	 * 
-	 * @param path
-	 *            resource path.
+	 * @param resource
+	 *            relative resource file path.
+	 * @param paths
+	 *            paths to search for resource under.
 	 * @return {@code true} if the resource exists.
 	 * @throws IOException
 	 *             when i/o error occurs while checking for resource existence.
 	 */
-	public boolean exists(String path) throws IOException;
+	public boolean exists(String resource, String[] paths) throws IOException;
 
 	/**
 	 * Loads the given resource's contents.
 	 * 
-	 * @param path
-	 *            resource path.
+	 * @param resource
+	 *            relative resource file path.
+	 * @param paths
+	 *            paths to search for resource under.
 	 * @param charset
 	 *            character set name, valid with respect to
 	 *            {@link java.nio.charset.Charset}.
@@ -48,5 +52,5 @@ public interface ResourceLoader {
 	 *             when i/o error occurs while loading the resource, or charset
 	 *             is invalid.
 	 */
-	public String load(String path, String charset) throws IOException;
+	public String load(String resource, String[] paths, String charset) throws IOException;
 }
