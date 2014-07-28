@@ -22,8 +22,6 @@ import java.io.StringWriter;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.sun.istack.internal.Nullable;
-
 /**
  * A base class for loader implementations.
  * 
@@ -98,7 +96,7 @@ public abstract class StreamResourceLoader implements ResourceLoader {
 		throw new IOException("No such file " + resource);
 	}
 	
-	private @Nullable String load(@Nullable String resourcePath, String charset) throws IOException {
+	private String load(String resourcePath, String charset) throws IOException {
 		if(resourcePath != null) {
 			InputStream is = openStream(resourcePath);
 			if (is != null) {
@@ -109,7 +107,7 @@ public abstract class StreamResourceLoader implements ResourceLoader {
 		return null;
 	}
 	
-	private @Nullable String getSchemalessPath(String resourcePath, boolean matchOnSchemaOnly, boolean failOnInvalidSchema) throws IOException {
+	private String getSchemalessPath(String resourcePath, boolean matchOnSchemaOnly, boolean failOnInvalidSchema) throws IOException {
 		Matcher m = getSchemaMatcher(resourcePath);
 		if (m.matches()) {
 			if (m.group(1).equals(getSchema())) {
@@ -127,7 +125,7 @@ public abstract class StreamResourceLoader implements ResourceLoader {
 		return resourcePath;
 	}
 	
-	private @Nullable Matcher getSchemaMatcher(String resourcePath) {
+	private Matcher getSchemaMatcher(String resourcePath) {
 		return PATTERN.matcher(resourcePath);
 	}
 	
