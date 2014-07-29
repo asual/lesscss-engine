@@ -15,17 +15,27 @@ var lessenv = {
 			}
 		}
 	}
-}, arguments = [ '' ], exports = {}, location = {
+}, arguments = [ '' ], exports = {}, encode = {
+	encodeBase64 : function(str) {
+		return javax.xml.bind.DatatypeConverter.printBase64Binary(
+				new java.lang.String(str).getBytes());
+	}
+},location = {
 	port : 0
 }, document = {
 	getElementsByTagName : function(name) {
 		return [];
 	}
-}, window = {};
+}, window = {
+	less : {
+		"encode" : encode,
+		"encoder.js" : encode
+	}
+};
 
 print = function() {};
 quit = function() {
 };
 readFile = function() {
-	return '';
+	return "";
 };

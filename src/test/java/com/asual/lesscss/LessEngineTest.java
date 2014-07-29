@@ -230,7 +230,7 @@ public class LessEngineTest {
 		LessOptions options = new LessOptions();
 		options.setSourceMap(true);
 		LessEngine engine = new LessEngine(options);
-		assertEquals("div {\n  width: 2;\n}\n/*# sourceMappingURL=data:application/json,%7B%22version%22%3A3%2C%22sources%22%3A%5B%22input%22%5D%2C%22names%22%3A%5B%5D%2C%22mappings%22%3A%22AAAI%3BEAAE%2CQAAA%22%7D */",
+		assertEquals("div {\n  width: 2;\n}\n/*# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbImlucHV0Il0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiJBQUFBO0VBQU0sUUFBQSJ9 */",
 				engine.compile("div { width: 1 + 1 }"));
 	}
 
@@ -244,7 +244,7 @@ public class LessEngineTest {
 		assertEquals("div {\n  width: 2;\n}\n/*# sourceMappingURL=" + sourceMapUrl + " */",
 				engine.compile("div { width: 1 + 1 }"));
 		File file = new File(sourceMapUrl);
-		assertEquals("{\"version\":3,\"sources\":[\"input\"],\"names\":[],\"mappings\":\"AAAI;EAAE,QAAA\"}",
+		assertEquals("{\"version\":3,\"sources\":[\"input\"],\"names\":[],\"mappings\":\"AAAA;EAAM,QAAA\"}",
 				getContent(file));
 		file.delete();
 	}
