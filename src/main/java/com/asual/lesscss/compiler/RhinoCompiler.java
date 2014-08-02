@@ -72,6 +72,7 @@ public class RhinoCompiler implements LessCompiler {
 				.openConnection().getInputStream()), engine.getFile(), 1,
 				null);
 		compile = (Function) scope.get("compile", scope);
+		Context.exit();
 	}
 
 	@Override
