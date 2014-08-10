@@ -25,6 +25,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.asual.lesscss.compiler.LessCompiler;
+import com.asual.lesscss.compiler.NashornCompiler;
 import com.asual.lesscss.compiler.RhinoCompiler;
 import com.asual.lesscss.loader.ChainedResourceLoader;
 import com.asual.lesscss.loader.ClasspathResourceLoader;
@@ -80,7 +81,13 @@ public class LessEngine {
 			URL engine = classLoader.getResource("META-INF/engine.js");
 			URL cssmin = classLoader.getResource("META-INF/cssmin.js");
 			URL sourceMap = classLoader.getResource("META-INF/source-map.js");
-			compiler = new RhinoCompiler(options, loader, less, env, engine, cssmin, sourceMap);
+		    double version = Double.parseDouble(Runtime.class.getPackage()
+		    		.getImplementationVersion().replaceFirst("^(\\d\\.\\d).*", "$1"));
+			if (version < 1.8) {
+				compiler = new RhinoCompiler(options, loader, less, env, engine, cssmin, sourceMap);				
+			} else {
+				compiler = new NashornCompiler(options, loader, less, env, engine, cssmin, sourceMap);
+			}
 		} catch (Exception e) {
 			logger.error("LESS Engine intialization failed.", e);
 		}

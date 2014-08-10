@@ -1,3 +1,12 @@
+if (typeof readFile === "undefined") {
+	var readFile = function(path) {
+		return new String(java.nio.file.Files.readAllBytes(java.nio.file.Paths.get(path)));
+	};
+	var readUrl = function(url) {
+		return new String(java.nio.file.Files.readAllBytes(java.nio.file.Paths.get(new java.net.URL(url).getAbsoluteFile())));
+	};
+}
+
 var lessenv = {
 	print : print,
 	quit : quit,
@@ -20,7 +29,7 @@ var lessenv = {
 		return javax.xml.bind.DatatypeConverter.printBase64Binary(
 				new java.lang.String(str).getBytes());
 	}
-},location = {
+}, location = {
 	port : 0
 }, document = {
 	getElementsByTagName : function(name) {

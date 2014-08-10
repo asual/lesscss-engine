@@ -1,6 +1,7 @@
 print = lessenv.print;
 quit = lessenv.quit;
 readFile = lessenv.readFile;
+readUrl = lessenv.readUrl;
 delete arguments;
 
 var basePath = function(path) {
