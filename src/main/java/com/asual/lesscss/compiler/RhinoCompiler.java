@@ -19,7 +19,13 @@ import com.asual.lesscss.LessOptions;
 import com.asual.lesscss.loader.ResourceLoader;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.mozilla.javascript.*;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.Function;
+import org.mozilla.javascript.JavaScriptException;
+import org.mozilla.javascript.NativeArray;
+import org.mozilla.javascript.Scriptable;
+import org.mozilla.javascript.ScriptableObject;
+import org.mozilla.javascript.UniqueTag;
 import org.mozilla.javascript.tools.shell.Global;
 
 import java.io.IOException;
@@ -30,10 +36,9 @@ import java.util.List;
 
 public class RhinoCompiler implements LessCompiler {
 
-	private Scriptable scope;
-	private final Function compile;
-
 	private final Log logger = LogFactory.getLog(getClass());
+	private final Scriptable scope;
+	private final Function compile;
 
 	public RhinoCompiler(LessOptions options, ResourceLoader loader, URL less, URL env, URL engine, URL cssmin, URL sourceMap) throws IOException {
 		Context cx = Context.enter();
@@ -78,15 +83,11 @@ public class RhinoCompiler implements LessCompiler {
 	@Override
 	public String compile(String input, String location, boolean compress) throws LessException {
 		try {
-			return call(compile, new Object[]{input, location, compress});
-		}
-		catch (Exception e){
+			return (String) Context.call(null, compile, scope, scope,
+					new Object[]{input, location, compress});
+		} catch (Exception e) {
 			throw new LessException(parseLessException(e));
 		}
-	}
-
-	private String call(Function fn, Object[] args) {
-		return (String) Context.call(null, fn, scope, scope, args);
 	}
 
 	private boolean hasProperty(Scriptable value, String name) {
@@ -94,8 +95,7 @@ public class RhinoCompiler implements LessCompiler {
 		return property != null && !property.equals(UniqueTag.NOT_FOUND);
 	}
 
-	private LessException parseLessException(Exception root)
-			throws LessException {
+	private Exception parseLessException(Exception root) {
 		logger.debug("Parsing LESS Exception", root);
 		if (root instanceof JavaScriptException) {
 			Scriptable value = (Scriptable) ((JavaScriptException) root)
@@ -130,10 +130,10 @@ public class RhinoCompiler implements LessCompiler {
 					}
 				}
 			}
-			throw new LessException(message, type, filename, line, column,
+			return new LessException(message, type, filename, line, column,
 					extractList);
 		}
-		throw new LessException(root);
+		return root;
 	}
 
 }

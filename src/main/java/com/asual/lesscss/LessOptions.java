@@ -56,19 +56,19 @@ public class LessOptions {
 		this.charset = charset;
 	}
 
-	public boolean isCss() {
+	public Boolean isCss() {
 		return css;
 	}
 
-	public void setCss(boolean css) {
+	public void setCss(Boolean css) {
 		this.css = css;
 	}
 
-	public boolean isCompress() {
+	public Boolean isCompress() {
 		return compress;
 	}
 
-	public void setCompress(boolean compress) {
+	public void setCompress(Boolean compress) {
 		this.compress = compress;
 	}
 
