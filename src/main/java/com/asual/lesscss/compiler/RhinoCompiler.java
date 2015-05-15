@@ -49,10 +49,10 @@ public class RhinoCompiler implements LessCompiler {
 		global.init(cx);
 		scope = cx.initStandardObjects(global);
 		cx.evaluateReader(scope, new InputStreamReader(sourceMap
-				.openConnection().getInputStream()), sourceMap.getFile(), 1,
+				.openConnection().getInputStream()), sourceMap.toExternalForm(), 1,
 				null);
 		cx.evaluateReader(scope, new InputStreamReader(env.openConnection()
-				.getInputStream()), env.getFile(), 1, null);
+				.getInputStream()), env.toExternalForm(), 1, null);
 		Scriptable lessEnv = (Scriptable) scope.get("lessenv", scope);
 		lessEnv.put("charset", lessEnv, options.getCharset());
 		lessEnv.put("css", lessEnv, options.isCss());
@@ -68,13 +68,13 @@ public class RhinoCompiler implements LessCompiler {
 			lessEnv.put("paths", lessEnv, nativeArray);
 		}
 		cx.evaluateReader(scope, new InputStreamReader(less
-				.openConnection().getInputStream()), less.getFile(), 1,
+				.openConnection().getInputStream()), less.toExternalForm(), 1,
 				null);
 		cx.evaluateReader(scope, new InputStreamReader(cssmin
-				.openConnection().getInputStream()), cssmin.getFile(), 1,
+				.openConnection().getInputStream()), cssmin.toExternalForm(), 1,
 				null);
 		cx.evaluateReader(scope, new InputStreamReader(engine
-				.openConnection().getInputStream()), engine.getFile(), 1,
+				.openConnection().getInputStream()), engine.toExternalForm(), 1,
 				null);
 		compile = (Function) scope.get("compile", scope);
 		Context.exit();
