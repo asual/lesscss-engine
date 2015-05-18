@@ -186,6 +186,15 @@ public class LessEngineTest {
 	}
 
 	@Test
+	public void testImportReference() throws LessException, IOException {
+		String expected = ".newlogo {\n"
+			+"  background-image: url(../img/logo.png);\n"
+			+"}\n";
+		String result = engine.compile(getResource("less/import-reference.less"));
+		assertEquals(expected, result);
+	}
+
+	@Test
 	public void testSample() throws LessException, IOException {
 		String expected = ".box {\n  color: #fe33ac;\n"
 				+ "  border-color: #fdcdea;\n}\n.box div {\n"
